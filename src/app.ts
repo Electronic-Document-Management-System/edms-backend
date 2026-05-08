@@ -4,8 +4,8 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import cors from 'cors';
 
-const app = express();
 const router = Router();
+const app = express();
 
 // Middlewares
 
