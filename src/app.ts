@@ -37,15 +37,20 @@ app.use(
   }),
 );
 
-// Routes 
+// Routes
 
-router.get("/api/health", (_req, res) => {
+router.get('/api/health', (_req, res) => {
   res.status(200).json({
-    status: "UP",
-    timeStamp: new Date()
-  })
+    status: 'UP',
+    timeStamp: new Date(),
+  });
 });
 
+// Auth Routes
+
+import authRouter from "./modules/auth/auth.routes";
+
 app.use(router);
+app.use('/api/v1/auth', authRouter);
 
 export default app;

@@ -9,20 +9,68 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  dept_id   Int
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  password_hash String
+  refreshToken  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  dept_id    Int
+  department Department @relation(fields: [dept_id], references: [id])
+  roles      UserRole[]
 }
 
-model role {
-  id Int @id @default(autoincrement())
-  name String
+model Role {
+  id              Int              @id @default(autoincrement())
+  name            String           @unique
+  users           UserRole[]
+  rolePermissions RolePermission[]
+}
+
+model UserRole {
+  user_id Int
+  role_id Int
+  user    User @relation(fields: [user_id], references: [id])
+  role    Role @relation(fields: [role_id], references: [id])
+
+  assigned_by Int?
+  assigned_at DateTime @default(now())
+
+  @@id([user_id, role_id])
+}
+
+model Permission {
+  id              Int              @id @default(autoincrement())
+  resource        String
+  action          String
+  scope           String           @default("all")
+  rolePermissions RolePermission[]
+
+  @@unique([resource, action, scope])
+}
+
+model RolePermission {
+  role_id       Int
+  permission_id Int
+  role          Role       @relation(fields: [role_id], references: [id])
+  permission    Permission @relation(fields: [permission_id], references: [id])
+
+  @@id([role_id, permission_id])
+}
+
+model Department {
+  id        Int    @id @default(autoincrement())
+  name      String @unique
+  parent_id Int?
+
+  parent    Department?  @relation("DeptToDept", fields: [parent_id], references: [id])
+  sub_depts Department[] @relation("DeptToDept")
+
+  users User[]
 }
