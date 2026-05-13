@@ -5,3 +5,11 @@ export type UserWithRoles = User & {
         role: Role;
     })[];
 };
+
+export interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
