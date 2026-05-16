@@ -2,16 +2,17 @@ import { NextFunction, Request, Response } from 'express';
 import asyncHandler from '../utils/asyncHandler';
 import ApiError from '../utils/ApiError';
 import { prisma } from '../config/db.config';
+import { PermissionInput, UserWithPermissions } from '../types/rbac';
 
-export const requirePermission = (permissionKey: string) =>
-  asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
-    if (!req.user?.id) {
-      throw new ApiError(401, 'Unauthorized request.');
-    }
+const buildPermissionKey = (permission: PermissionInput): string => {
+  return `${permission.resource}:${permission.action}:${permission.scope}`;
+};
 
-    const userWithPermissions = await prisma.user.findUnique({
+const getUserPermissionKeys = async (userId: number): Promise<string[]> => {
+  const userWithPermissions: UserWithPermissions | null =
+    await prisma.user.findUnique({
       where: {
-        id: req.user.id,
+        id: userId,
       },
       include: {
         roles: {
@@ -30,18 +31,31 @@ export const requirePermission = (permissionKey: string) =>
       },
     });
 
-    if (!userWithPermissions) {
-      throw new ApiError(401, 'User not found.');
+  if (!userWithPermissions) {
+    throw new ApiError(401, 'User not found.');
+  }
+
+  return userWithPermissions.roles.flatMap((userRole) =>
+    userRole.role.rolePermissions.map((rolePermission) =>
+      buildPermissionKey({
+        resource: rolePermission.permission.resource,
+        action: rolePermission.permission.action,
+        scope: rolePermission.permission.scope,
+      }),
+    ),
+  );
+};
+
+export const requirePermission = (requiredPermission: PermissionInput) =>
+  asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+    if (!req.user?.id) {
+      throw new ApiError(401, 'Unauthorized request.');
     }
 
-    const permissions = userWithPermissions.roles.flatMap((userRole) => {
-      return userRole.role.rolePermissions.map(
-        (rolePermission) =>
-          `${rolePermission.permission.resource}:${rolePermission.permission.action}:${rolePermission.permission.scope}`,
-      );
-    });
+    const userPermissionKeys = await getUserPermissionKeys(req.user.id);
+    const requiredPermissionKey = buildPermissionKey(requiredPermission);
 
-    const hasPermission = permissions.includes(permissionKey);
+    const hasPermission = userPermissionKeys.includes(requiredPermissionKey);
 
     if (!hasPermission) {
       throw new ApiError(403, 'You are not allowed to perform this action.');
@@ -50,46 +64,20 @@ export const requirePermission = (permissionKey: string) =>
     next();
   });
 
-export const requireAnyPermission = (permissionKeys: string[]) =>
+export const requireAnyPermission = (requiredPermissions: PermissionInput[]) =>
   asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user?.id) {
       throw new ApiError(401, 'Unauthorized request.');
     }
 
-    const userWithPermissions = await prisma.user.findUnique({
-      where: {
-        id: req.user.id,
-      },
-      include: {
-        roles: {
-          include: {
-            role: {
-              include: {
-                rolePermissions: {
-                  include: {
-                    permission: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
+    const userPermissionKeys = await getUserPermissionKeys(req.user.id);
 
-    if (!userWithPermissions) {
-      throw new ApiError(401, 'User not found.');
-    }
-
-    const permissions = userWithPermissions.roles.flatMap((userRole) =>
-      userRole.role.rolePermissions.map(
-        (rolePermission) =>
-          `${rolePermission.permission.resource}: ${rolePermission.permission.action}: ${rolePermission.permission.scope}`,
-      ),
+    const requiredPermissionKeys = requiredPermissions.map((permission) =>
+      buildPermissionKey(permission),
     );
 
-    const hasAnyPermission = permissionKeys.some((key) =>
-      permissions.includes(key),
+    const hasAnyPermission = requiredPermissionKeys.some((permissionKey) =>
+      userPermissionKeys.includes(permissionKey),
     );
 
     if (!hasAnyPermission) {
@@ -99,46 +87,20 @@ export const requireAnyPermission = (permissionKeys: string[]) =>
     next();
   });
 
-export const requireAllPermissions = (permissionKeys: string[]) =>
+export const requireAllPermissions = (requiredPermissions: PermissionInput[]) =>
   asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user?.id) {
       throw new ApiError(401, 'Unauthorized request.');
     }
 
-    const userWithPermissions = await prisma.user.findUnique({
-      where: {
-        id: req.user.id,
-      },
-      include: {
-        roles: {
-          include: {
-            role: {
-              include: {
-                rolePermissions: {
-                  include: {
-                    permission: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
+    const userPermissionKeys = await getUserPermissionKeys(req.user.id);
 
-    if (!userWithPermissions) {
-      throw new ApiError(401, 'User not found.');
-    }
-
-    const permissions = userWithPermissions.roles.flatMap((userRole) =>
-      userRole.role.rolePermissions.map(
-        (rolePermission) =>
-          `${rolePermission.permission.resource}: ${rolePermission.permission.action}: ${rolePermission.permission.scope}`,
-      ),
+    const requiredPermissionKeys = requiredPermissions.map((permission) =>
+      buildPermissionKey(permission),
     );
 
-    const hasAllPermissions = permissionKeys.every((key) =>
-      permissions.includes(key),
+    const hasAllPermissions = requiredPermissionKeys.every((permissionKey) =>
+      userPermissionKeys.includes(permissionKey),
     );
 
     if (!hasAllPermissions) {
