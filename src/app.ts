@@ -46,11 +46,32 @@ router.get('/api/health', (_req, res) => {
   });
 });
 
-// Auth Routes
 
-import authRouter from "./modules/auth/auth.routes";
+import authRouter from './modules/auth/auth.routes';
+import rbacRouter from './modules/rbac/rbac.route';
+import usersRouter from './modules/users/users.route';
+import auditRouter from './modules/audit/audit.route';
+import departmentRouter from './modules/departments/department.route';
+import documentVersionsRouter from './modules/document_versions/documentVersions.route';
+import documentRouter from './modules/documents/document.route';
+import folderRouter from './modules/folders/folders.route';
+import reportRouter from './modules/reports/report.route';
+import metadataRouter from './modules/metadata/metadata.route';
+import workflowRouter from './modules/workflow/workflow.route';
+import notificationRouter from './modules/notification/notification.route';
 
 app.use(router);
-app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/tenant/auth', authRouter);
+app.use('/api/v1/tenant/rbac', rbacRouter);
+app.use('/api/v1/tanent/users', usersRouter);
+app.use('/api/v1/tenant/audit', auditRouter);
+app.use('/api/v1/tenant/departments', departmentRouter);
+app.use('/api/v1/tenant/document', documentRouter);
+app.use('/api/v1/tenant/documents/:id/versions', documentVersionsRouter);
+app.use('/api/v1/tenant/folders', folderRouter);
+app.use('/api/v1/tenant/report', reportRouter);
+app.use('/api/v1/tenant/metadata', metadataRouter);
+app.use('/api/v1/tenant/workflow', workflowRouter);
+app.use('/api/v1/tenant/notification', notificationRouter);
 
 export default app;
