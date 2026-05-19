@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import asyncHandler from '../utils/asyncHandler';
 import ApiError from '../utils/ApiError';
 import { prisma } from '../config/db.config';
-import { PermissionInput, UserWithPermissions } from '../types/rbac';
+import { PermissionInput, UserWithPermissions } from '../types/rbac.d';
 
 const buildPermissionKey = (permission: PermissionInput): string => {
   return `${permission.resource}:${permission.action}:${permission.scope}`;
@@ -35,8 +35,8 @@ const getUserPermissionKeys = async (userId: number): Promise<string[]> => {
     throw new ApiError(401, 'User not found.');
   }
 
-  return userWithPermissions.roles.flatMap((userRole) =>
-    userRole.role.rolePermissions.map((rolePermission) =>
+  return userWithPermissions.roles.flatMap((userRole: any) =>
+    userRole.role.rolePermissions.map((rolePermission: any) =>
       buildPermissionKey({
         resource: rolePermission.permission.resource,
         action: rolePermission.permission.action,
