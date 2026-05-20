@@ -1,74 +1,172 @@
-import { Request, Response } from 'express';
-import asyncHandler from '../../utils/asyncHandler';
-import ApiError from '../../utils/ApiError';
-import { ApiResponse } from '../../utils/ApiResponse';
-import {
-  activateUserService,
-  createNewUserService,
-  disableUserService,
-  getAllUsersService,
-  getUserByIdService,
-  updateUserByIdService,
-} from './users.service';
 
-export const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
-  const allUsers = await getAllUsersService();
+import { Request, Response } from "express";
+import asyncHandler from "../../utils/asyncHandler";
+import { ApiResponse } from "../../utils/ApiResponse";
+import { activateUserService, assignRoleToUserService, createNewUserService, getAllUsersService, getUserByIdService, removeRoleFromUserService, updateUserByIdService } from "./users.service";
 
-  res
+/**
+ * @description Creates a new tenant user with basic profile, department, and authentication details.
+ * @route POST /api/tenant/users
+ * @access Private
+ */
+export const createNewUser = asyncHandler(async (req: Request, res: Response) => {
+
+  const newUserData = req.body;
+  const newUser = await createNewUserService(newUserData);
+
+  return res
     .status(200)
-    .json(new ApiResponse(200, {}, 'All users retrieved successfully'));
+    .json(
+      new ApiResponse(
+        200,
+        newUser,
+        "User created successfully"
+      )
+    );
 });
 
+/**
+ * @description Gets all users for the current tenant.
+ * @route GET /api/tenant/users
+ * @access Private
+ */
+export const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
+
+  const users = await getAllUsersService();
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        users,
+        "Users retrieved successfully"
+      )
+    );
+});
+
+/**
+ * @description Gets a user by ID for the current tenant.
+ * @route GET /api/tenant/users/:id
+ * @access Private
+ */
 export const getUserById = asyncHandler(async (req: Request, res: Response) => {
+
   const userId = Number(req.params.id);
   const user = await getUserByIdService(userId);
 
-  res
+  return res
     .status(200)
-    .json(new ApiResponse(200, user, 'User retrieved successfully'));
+    .json(
+      new ApiResponse(
+        200,
+        user,
+        "User retrieved successfully"
+      )
+    );
 });
 
-export const createNewUser = asyncHandler(
-  async (req: Request, res: Response) => {
-    const currentUser = req.user;
-    await createNewUserService(currentUser);
+/**
+ * @description Updates a user by ID for the current tenant.
+ * @route PATCH /api/tenant/users/:id
+ * @access Private
+ */
+export const updateUserById = asyncHandler(async (req: Request, res: Response) => {
 
-    res
-      .status(200)
-      .json(new ApiResponse(200, {}, 'User created successfully'));
-  },
-);
-
-export const updateUserById = asyncHandler(
-  async (req: Request, res: Response) => {
-    // req.user
-    const userId = Number(req.params.id);
-    const updatedUser = await updateUserByIdService(userId);
-
-    res
-      .status(200)
-      .json(new ApiResponse(200, updatedUser, 'User updated successfully'));
-  },
-);
-
-export const disableUser = asyncHandler(async (req: Request, res: Response) => {
-  // req.user
   const userId = Number(req.params.id);
-  const disabledUser = await disableUserService(userId);
+  const userData = req.body;
+  const updatedUser = await updateUserByIdService(userId, userData);
 
-  res
+  return res
     .status(200)
-    .json(new ApiResponse(200, disabledUser, 'User disabled successfully'));
+    .json(
+      new ApiResponse(
+        200,
+        updatedUser,
+        "User updated successfully"
+      )
+    );
 });
 
-export const activateUser = asyncHandler(
-  async (req: Request, res: Response) => {
-    // req.user
-    const userId = Number(req.params.id);
-    const activatedUser = await activateUserService(userId);
+/**
+ * @description Disables a user by ID for the current tenant.
+ * @route PATCH /api/tenant/users/:id/disable
+ * @access Private
+ */
+export const disableUser = asyncHandler(async (req: Request, res: Response) => {
 
-    res
-      .status(200)
-      .json(new ApiResponse(200, activatedUser, 'User activated successfully'));
-  },
-);
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        {},
+        "User disabled successfully"
+      )
+    );
+});
+
+/**
+ * @description Activates a user by ID for the current tenant.
+ * @route PATCH /api/tenant/users/:id/activate
+ * @access Private
+ */
+export const activateUser = asyncHandler(async (req: Request, res: Response) => {
+
+  const userId = Number(req.params.id);
+  const activatedUser = await activateUserService(userId);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        activatedUser,
+        "User activated successfully"
+      )
+    );
+});
+
+/**
+ * @description Assigns a role to a user by ID for the current tenant.
+ * @route POST /api/tenant/users/:id/roles
+ * @access Private
+ */
+export const assignRoleToUser = asyncHandler(async (req: Request, res: Response) => {
+
+  const userId = Number(req.params.id);
+  const roleId = Number(req.body.roleId);
+  const assignedRole = await assignRoleToUserService(userId, roleId);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        assignedRole,
+        "Role assigned to user successfully"
+      )
+    );
+});
+
+/**
+ * @description Removes a role from a user by ID for the current tenant.
+ * @route POST /api/tenant/users/:id/roles
+ * @access Private
+ */
+export const removeRoleFromUser = asyncHandler(async (req: Request, res: Response) => {
+
+  const userId = Number(req.params.id);
+  const roleId = Number(req.body.roleId);
+  const removedRole = await removeRoleFromUserService(userId, roleId);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        removedRole,
+        "Role removed from user successfully"
+      )
+    );
+});
