@@ -1,4 +1,6 @@
 export const RESOURCES = {
+  ROLE_PERMISSION: 'rolePermission',
+  USER_ROLE: 'userRole',
   DOCUMENT: 'document',
   USER: 'user',
   ROLE: 'role',
