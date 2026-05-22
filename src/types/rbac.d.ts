@@ -29,3 +29,14 @@ export type UserWithPermissions = Prisma.UserGetPayload<{
     };
   };
 }>;
+
+export type RoleData = {
+  name: string;
+  description?: string;
+};
+
+export type PermissionData = {
+  resource: Resource;
+  action: Action;
+  scope: Scope;
+};
