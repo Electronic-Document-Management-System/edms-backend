@@ -6,7 +6,7 @@ import { ApiResponse } from "../../utils/ApiResponse";
 export const getAllDepartments = asyncHandler(async (req: Request, res: Response) => {
     const departments = await getAllDepartmentsService();
 
-    res
+    return res
         .status(200)
         .json(new ApiResponse(
             200,
@@ -17,11 +17,11 @@ export const getAllDepartments = asyncHandler(async (req: Request, res: Response
 
 export const getDepartmentById = asyncHandler(async (req: Request, res: Response) => {
 
-    const { id } = req.params;
+    const deptartmentId = Number(req.params.id);
 
-    const department = await getDepartmentByIdService(id);
+    const department = await getDepartmentByIdService(deptartmentId);
 
-    res
+    return res
         .status(200)
         .json(new ApiResponse(
             200,
@@ -32,9 +32,10 @@ export const getDepartmentById = asyncHandler(async (req: Request, res: Response
 
 export const createNewDepartment = asyncHandler(async (req: Request, res: Response) => {
 
-    const department = await createNewDepartmentService();
+    const departmentData = req.body;
+    const department = await createNewDepartmentService(departmentData);
 
-    res
+    return res
         .status(201)
         .json(new ApiResponse(
             201,
@@ -45,9 +46,11 @@ export const createNewDepartment = asyncHandler(async (req: Request, res: Respon
 
 export const updateDepartment = asyncHandler(async (req: Request, res: Response) => {
 
-    const { id } = req.params;
-    const updatedDepartment = await updateDepartmentService(id)
-    res
+    const deptId = Number(req.params.id);
+    const departmentData = req.body;
+
+    const updatedDepartment = await updateDepartmentService(deptId, departmentData)
+    return res
         .status(201)
         .json(new ApiResponse(
             201,
@@ -59,14 +62,14 @@ export const updateDepartment = asyncHandler(async (req: Request, res: Response)
 
 export const deleteDepartment = asyncHandler(async (req: Request, res: Response) => {
 
-    const { id } = req.params;
-    const deletedDepartment = await deleteDepartmentService(id)
+    const deptartmentId = Number(req.params.id);
+    const deletedDepartment = await deleteDepartmentService(deptartmentId)
 
-    res
+    return res
         .status(200)
         .json(new ApiResponse(
             200,
-            {  },
-            "Department updated successfully"
+            { department: deletedDepartment },
+            "Department deleted successfully"
         ));
 });
