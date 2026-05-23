@@ -28,6 +28,7 @@ export const ACTIONS = {
   ACTIVATE: 'activate',
   DISABLE: 'disable',
   REMOVE: 'remove',
+  MOVE: 'move',
 } as const;
 
 export const SCOPES = {

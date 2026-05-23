@@ -23,6 +23,8 @@ model User {
   department    Department @relation(fields: [dept_id], references: [id])
   isActive      Boolean  @default(true)
   roles         UserRole[]
+
+  createdFolders Folder[]
 }
 
 model Role {
@@ -72,4 +74,25 @@ model Department {
   sub_depts Department[] @relation("DeptToDept")
 
   users User[]
+
+  folders Folder[]
+}
+
+model Folder {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+
+  parent_id    Int?
+  parent      Folder?  @relation("FolderHierarchy", fields: [parent_id], references: [id])
+  children    Folder[] @relation("FolderHierarchy")
+
+  dept_id     Int?
+  department  Department? @relation(fields: [dept_id], references: [id])
+
+  createdById Int?
+  createdBy   User? @relation(fields: [createdById], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
