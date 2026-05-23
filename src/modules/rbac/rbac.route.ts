@@ -19,7 +19,6 @@ import {
   requirePermission,
 } from '../../middlewares/rbac.middleware';
 import { ACTIONS, RESOURCES, SCOPES } from '../../constants';
-import { assignRoleToUser, removeRoleFromUser } from '../users/users.controller';
 
 // POST   /api/rbac/roles
 // PATCH  /api/rbac/roles/:id
@@ -32,8 +31,6 @@ import { assignRoleToUser, removeRoleFromUser } from '../users/users.controller'
 // POST   /api/rbac/roles/:id/permissions
 // DELETE /api/rbac/roles/:id/permissions/:id
 
-// POST   /api/tenant/users/:id/roles
-// DELETE /api/tenant/users/:id/roles/:roleId
 
 const router = Router();
 
@@ -186,30 +183,5 @@ router
     }),
     removePermissionFromRole
   );
-
-router
-  .route("/users/:id/roles")
-  .post(
-    requireAuth,
-    requirePermission({
-      resource: RESOURCES.USER_ROLE,
-      action: ACTIONS.ASSIGN,
-      scope: SCOPES.ALL
-    }),
-    assignRoleToUser
-  );
-
-router
-  .route("/users/:id/roles/:id")
-  .delete(
-    requireAuth,
-    requirePermission({
-      resource: RESOURCES.USER_ROLE,
-      action: ACTIONS.REMOVE,
-      scope: SCOPES.ALL
-    }),
-    removeRoleFromUser
-  );
-
 
 export default router;

@@ -4,7 +4,6 @@ import asyncHandler from '../../utils/asyncHandler';
 import ApiError from '../../utils/ApiError';
 import {
   addPermissionToRoleService,
-  assignRoleToUserService,
   createPermissionService,
   createRoleService,
   deletePermissionService,
@@ -15,7 +14,6 @@ import {
   getRolePermissionsService,
   getUserRolesService,
   removePermissionFromRoleService,
-  removeRoleFromUserService,
   updatePermissionService,
   updateRoleService,
 } from './rbac.service';
@@ -329,70 +327,6 @@ export const removePermissionFromRole = asyncHandler(
           200,
           { rolePermission: removedPermission },
           'Permission removed from role successfully',
-        ),
-      );
-  },
-);
-
-/**
- * @description Assigns a role to a specific user.
- * @route POST /api/rbac/users/:id/roles
- * @access Private
- */
-export const roleAssignToUser = asyncHandler(
-  async (req: Request, res: Response) => {
-    const userId = Number(req.params.id);
-    const roleId = Number(req.body.roleId);
-
-    if (Number.isNaN(userId)) {
-      throw new ApiError(400, 'Invalid user id.');
-    }
-
-    if (Number.isNaN(roleId)) {
-      throw new ApiError(400, 'Invalid role id.');
-    }
-
-    const assignedRole = await assignRoleToUserService(userId, roleId);
-
-    return res
-      .status(201)
-      .json(
-        new ApiResponse(
-          201,
-          { userRole: assignedRole },
-          'Role assigned to user successfully',
-        ),
-      );
-  },
-);
-
-/**
- * @description Removes a role from a specific user.
- * @route DELETE /api/rbac/users/:id/roles/:roleId
- * @access Private
- */
-export const roleRemoveFromUser = asyncHandler(
-  async (req: Request, res: Response) => {
-    const userId = Number(req.params.id);
-    const roleId = Number(req.params.roleId);
-
-    if (Number.isNaN(userId)) {
-      throw new ApiError(400, 'Invalid user id.');
-    }
-
-    if (Number.isNaN(roleId)) {
-      throw new ApiError(400, 'Invalid role id.');
-    }
-
-    const removedRole = await removeRoleFromUserService(userId, roleId);
-
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          { userRole: removedRole },
-          'Role removed from user successfully',
         ),
       );
   },
