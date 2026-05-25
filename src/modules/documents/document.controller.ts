@@ -1,92 +1,294 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "../../utils/ApiResponse";
 import asyncHandler from "../../utils/asyncHandler";
-import { archiveDocumentService, createNewDocumentService, downloadDocumentService, getAllDocumentsService, getDocumentByIdService, removeDocumentService, restoreDocumentService, searchDocumentsService, updateDocumentService } from "./document.service";
+import {
+    archiveDocumentService,
+    downloadDocumentService,
+    getAllDocumentsService,
+    getDocumentByIdService,
+    removeDocumentService,
+    restoreDocumentService,
+    searchDocumentsService,
+    updateDocumentService,
+    uploadBulkDocumentsService,
+    uploadSingleDocumentService
+} from "./document.service";
+import ApiError from "../../utils/ApiError";
 
+/**
+ * @description Retrieves all documents from PostgreSQL.
+ * @route GET /api/documents
+ * @access Private
+ */
 export const getAllDocuments = asyncHandler(async (req: Request, res: Response) => {
 
-    const allDocuments = await getAllDocumentsService();
+    const departmentId = req.query.departmentId as string | undefined;
+    const folderId = req.query.folderId as string | undefined;
 
-    res
+    const search = req.query.search as string | undefined;
+    const status = req.query.status as string | undefined;
+
+    const page = req.query.page ? Number(req.query.page) : 1;
+    const limit = req.query.limit ? Number(req.query.limit) : 20;
+
+    const allDocuments = await getAllDocumentsService({ departmentId, folderId, search, status, page, limit, user: req.user });
+
+    return res
         .status(200)
-        .json(new ApiResponse(200, 'All documents retrieved successfully'));
+        .json(
+            new ApiResponse(
+                200,
+                allDocuments,
+                'All documents retrieved successfully'
+            )
+        );
 });
 
+/**
+ * @description Retrieves a document by ID from PostgreSQL.
+ * @route GET /api/documents/:id
+ * @access Private
+ */
 export const getDocumentById = asyncHandler(async (req: Request, res: Response) => {
 
     const documentId = Number(req.params.id);
     const document = await getDocumentByIdService(documentId);
 
-    res
+    return res
         .status(200)
-        .json(new ApiResponse(200, document, 'Document retrieved successfully'));
+        .json(
+            new ApiResponse(
+                200,
+                document,
+                'Document retrieved successfully'
+            )
+        );
 });
 
-export const createNewDocument = asyncHandler(async (req: Request, res: Response) => {
+/**
+ * @description Uploads a document file to MinIO and stores document metadata in PostgreSQL.
+ * @route POST /api/documents
+ * @access Private
+ */
+export const uploadDocument = asyncHandler(async (req: Request, res: Response) => {
 
-    const { title, description, file } = req.body;
-    const newDocument = await createNewDocumentService();
+    if (!req.user?.id) {
+        throw new ApiError(401, "Unauthorized request");
+    };
+    const uploaded_by = Number(req.user.id);
+    const { title, description, dept_id, folder_id } = req.body;
 
-    res
+    const deptId = Number(dept_id);
+    const folderId = Number(folder_id);
+    const uploadedBy = Number(uploaded_by);
+    if (Number.isNaN(deptId)) {
+        throw new ApiError(400, "Department ID must be a number");
+    }
+    if (Number.isNaN(folderId)) {
+        throw new ApiError(400, "Folder ID must be a number");
+    };
+
+    const newDocument = await uploadSingleDocumentService({ title, description, dept_id: deptId, folder_id: folderId, uploaded_by: uploadedBy }, req.file);
+
+    return res
         .status(201)
-        .json(new ApiResponse(201, 'All documents retrieved successfully'));
+        .json(
+            new ApiResponse(
+                201,
+                newDocument,
+                'Document created successfully'
+            )
+        );
 });
 
-export const updateDocument = asyncHandler(async (req: Request, res: Response) => {
+/**
+ * @description Uploads multiple document files to MinIO and stores document metadata in PostgreSQL.
+ * @route POST /api/documents/bulk
+ * @access Private
+ */
+export const uploadBulkDocuments = asyncHandler(async (req: Request, res: Response) => {
 
-    const documentId = Number(req.params.id);
-    const updatedDocument = await updateDocumentService(documentId);
+    if (!req.user?.id) {
+        throw new ApiError(401, "Unauthorized request");
+    };
+    const uploaded_by = Number(req.user.id);
+    const { title, description, dept_id, folder_id } = req.body;
 
-    res
-        .status(200)
-        .json(new ApiResponse(200, updatedDocument, 'Document updated successfully'));
+    const deptId = Number(dept_id);
+    const folderId = Number(folder_id);
+    if (Number.isNaN(deptId)) {
+        throw new ApiError(400, "Department ID must be a number");
+    }
+    if (Number.isNaN(folderId)) {
+        throw new ApiError(400, "Folder ID must be a number");
+    };
+
+    const newDocuments = await uploadBulkDocumentsService({
+        title, description, dept_id: deptId, folder_id: folderId, uploaded_by
+    }, req.files as Express.Multer.File[]);
+
+    return res
+        .status(201)
+        .json(
+            new ApiResponse(
+                201,
+                { documents: newDocuments },
+                'Documents uploaded successfully'
+            )
+        );
 });
 
+/**
+ * @description Updates a document's metadata.
+ * @route PUT /api/documents/:id
+ * @access Private
+ */
+export const updateDocument = asyncHandler(
+    async (req: Request, res: Response) => {
+        const documentId = Number(req.params.id);
+
+        if (Number.isNaN(documentId)) {
+            throw new ApiError(400, 'Invalid document ID.');
+        }
+
+        const { title, description, dept_id, folder_id } = req.body;
+
+        const updateData: any = {};
+
+        if (title !== undefined) updateData.title = title;
+        if (description !== undefined) updateData.description = description;
+
+        if (dept_id !== undefined) {
+            const deptId = Number(dept_id);
+
+            if (Number.isNaN(deptId)) {
+                throw new ApiError(400, 'Invalid department ID.');
+            }
+
+            updateData.dept_id = deptId;
+        }
+
+        if (folder_id !== undefined) {
+            const folderId = Number(folder_id);
+
+            if (Number.isNaN(folderId)) {
+                throw new ApiError(400, 'Invalid folder ID.');
+            }
+
+            updateData.folder_id = folderId;
+        }
+
+        const updatedDocument = await updateDocumentService(documentId, updateData);
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    { document: updatedDocument },
+                    'Document updated successfully',
+                ),
+            );
+    },
+);
+
+/**
+ * @description Removes a document from MinIO and PostgreSQL.
+ * @route DELETE /api/documents/:id
+ * @access Private
+ */
 export const removeDocument = asyncHandler(async (req: Request, res: Response) => {
 
     const documentId = Number(req.params.id);
-    const removedDocument = await removeDocumentService(documentId);
+    const userId = req.user?.id;
+    const removedDocument = await removeDocumentService(documentId, userId!);
 
-    res
+    return res
         .status(200)
-        .json(new ApiResponse(200, removedDocument, 'Document removed successfully'));
+        .json(
+            new ApiResponse(
+                200,
+                removedDocument,
+                'Document removed successfully'
+            )
+        );
 });
 
+/**
+ * @description Archives a document in PostgreSQL.
+ * @route POST /api/documents/:id/archive
+ * @access Private
+ */
 export const archiveDocument = asyncHandler(async (req: Request, res: Response) => {
 
     const documentId = Number(req.params.id);
-    const archivedDocument = await archiveDocumentService(documentId);
+    const userId = req.user?.id;
+    const archivedDocument = await archiveDocumentService(documentId, userId!);
 
-    res
+    return res
         .status(200)
-        .json(new ApiResponse(200, archivedDocument, 'Document archived successfully'));
+        .json(
+            new ApiResponse(
+                200,
+                archivedDocument,
+                'Document archived successfully'
+            )
+        );
 });
 
+/**
+ * @description Downloads a document from MinIO.
+ * @route GET /api/documents/:id/download
+ * @access Private
+ */
 export const downloadDocument = asyncHandler(async (req: Request, res: Response) => {
 
     const documentId = Number(req.params.id);
     const downloadedDocument = await downloadDocumentService(documentId);
 
-    res
+    return res
         .status(200)
-        .json(new ApiResponse(200, downloadedDocument, 'Document downloaded successfully'));
+        .json(
+            new ApiResponse(
+                200,
+                downloadedDocument,
+                'Document downloaded successfully'
+            )
+        );
 });
 
+/**
+ * @description Restores a document in PostgreSQL.
+ * @route POST /api/documents/:id/restore
+ * @access Private
+ */
 export const restoreDocument = asyncHandler(async (req: Request, res: Response) => {
 
     const documentId = Number(req.params.id);
     const restoredDocument = await restoreDocumentService(documentId);
 
-    res
+    return res
         .status(200)
-        .json(new ApiResponse(200, restoredDocument, 'Document restored successfully'));
+        .json(
+            new ApiResponse(
+                200,
+                restoredDocument,
+                'Document restored successfully'
+            )
+        );
 });
 
 export const searchDocuments = asyncHandler(async (req: Request, res: Response) => {
 
     const searchedDocuments = await searchDocumentsService();
 
-    res
+    return res
         .status(200)
-        .json(new ApiResponse(200, searchedDocuments, 'Documents searched successfully'));
+        .json(
+            new ApiResponse(
+                200,
+                searchedDocuments,
+                'Documents searched successfully'
+            )
+        );
 });
