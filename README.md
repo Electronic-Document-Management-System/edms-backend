@@ -4,7 +4,7 @@ The core engine of the Electronic Document Management System.
 
 ## 🚀 Quick Links
 - [Architecture & Design Logic](./docs/architecture.md)
-- [API Documentation](./docs/api-spec.md)
+- [API Documentation](../edms-backend/docs/api/API_INDEX.md)
 - [Database Schema](./docs/database.md)
 
 ## 🛠 Tech Stack
