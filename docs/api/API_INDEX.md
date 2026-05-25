@@ -15,6 +15,7 @@ The API documentation is maintained alongside development so that implemented mo
 | Users | `USERS_API.md` | Implemented / In Progress |
 | Departments | `DEPARTMENTS_API.md` | Implemented |
 | Folders | `FOLDERS_API.md` | Implemented |
+| Documents | `DOCUMENTS_API.md` | Implemented - Phase 1 |
 
 ## API Response Format
 
