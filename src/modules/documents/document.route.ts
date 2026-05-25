@@ -1,13 +1,15 @@
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth.middleware";
-import { archiveDocument, createNewDocument, downloadDocument, getAllDocuments, getDocumentById, removeDocument, restoreDocument, searchDocuments, updateDocument } from "./document.controller";
+import { archiveDocument, downloadDocument, getAllDocuments, getDocumentById, removeDocument, restoreDocument, searchDocuments, updateDocument, uploadBulkDocuments, uploadDocument } from "./document.controller";
 import { requirePermission } from "../../middlewares/rbac.middleware";
 // Workflow routes
 import { approveDocument, assignReviewer, getWorkflowStatus, reassignReviewer, rejectDocument, submitDocument } from "../workflow/workflow.controller";
 import { addDocumentMetadata, getDocumentMetadata, removeDocumentMetadata, updateDocumentMetadata } from "../metadata/metadata.controller";
-import { getSharedDocuments, removeShare, removeShare, shareDocument } from "../sharing/sharing.controller";
+import { getSharedDocuments, removeShare, shareDocument } from "../sharing/sharing.controller";
 import { addDocumentComment, getDocumentComments } from "../comment/comment.controller";
 import { createDocumentVersion, getDocumentVersionById, getDocumentVersions, restoreDocumentVersion } from "../document_versions/documentVersions.controller";
+import { ACTIONS, RESOURCES, SCOPES } from "../../constants";
+import { uploadMultipleDocumentFiles, uploadSingleDocumentFile } from "../../middlewares/upload.middleware";
 
 const router = Router()
 
@@ -38,25 +40,77 @@ GET    /api/documents/:documentId/workflow-status
 router
     .route("/")
     .get(requireAuth, requirePermission, getAllDocuments)
-    .post(requireAuth, requirePermission, createNewDocument)
+    .post(requireAuth, requirePermission({
+        resource: RESOURCES.DOCUMENT,
+        action: ACTIONS.CREATE,
+        scope: SCOPES.ALL
+    }),
+        uploadSingleDocumentFile.single("file"),
+        uploadDocument
+    );
+
+router
+    .route("/bulk-upload")
+    .post(requireAuth, requirePermission({
+        resource: RESOURCES.DOCUMENT,
+        action: ACTIONS.CREATE,
+        scope: SCOPES.ALL
+    }),
+        uploadMultipleDocumentFiles.array("files", 10),
+        uploadBulkDocuments
+    );
 
 router
     .route("/:id")
-    .get(requireAuth, requirePermission, getDocumentById)
-    .patch(requireAuth, requirePermission, updateDocument)
-    .delete(requireAuth, requirePermission, removeDocument)
+    .get(requireAuth,
+        requirePermission({
+            resource: RESOURCES.DOCUMENT,
+            action: ACTIONS.READ,
+            scope: SCOPES.ALL
+        }),
+        getDocumentById)
+    .patch(requireAuth,
+        requirePermission({
+            resource: RESOURCES.DOCUMENT,
+            action: ACTIONS.UPDATE,
+            scope: SCOPES.OWN
+        }),
+        updateDocument)
+    .delete(requireAuth,
+        requirePermission({
+            resource: RESOURCES.DOCUMENT,
+            action: ACTIONS.DELETE,
+            scope: SCOPES.OWN
+        }),
+        removeDocument);
 
 router
     .route("/:id/download")
-    .get(requireAuth, requirePermission, downloadDocument)
+    .get(requireAuth,
+        requirePermission({
+            resource: RESOURCES.DOCUMENT,
+            action: ACTIONS.DOWNLOAD,
+            scope: SCOPES.ALL
+        }),
+        downloadDocument);
 
 router
     .route("/:id/archive")
-    .patch(requireAuth, requirePermission, archiveDocument)
+    .patch(requireAuth,
+        requirePermission({
+            resource: RESOURCES.DOCUMENT,
+            action: ACTIONS.ARCHIVE,
+            scope: SCOPES.OWN
+        }), archiveDocument);
 
 router
     .route("/:id/restore")
-    .patch(requireAuth, requirePermission, restoreDocument)
+    .patch(requireAuth,
+        requirePermission({
+            resource: RESOURCES.DOCUMENT,
+            action: ACTIONS.RESTORE,
+            scope: SCOPES.ALL
+        }), restoreDocument);
 
 router
     .route("/search")

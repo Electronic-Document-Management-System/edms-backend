@@ -23,6 +23,7 @@ model User {
   department    Department @relation(fields: [dept_id], references: [id])
   isActive      Boolean  @default(true)
   roles         UserRole[]
+  uploadedDocuments Document[]
 
   createdFolders Folder[]
 }
@@ -75,6 +76,7 @@ model Department {
 
   users User[]
 
+  documents Document[]
   folders Folder[]
 }
 
@@ -92,7 +94,60 @@ model Folder {
 
   createdById Int?
   createdBy   User? @relation(fields: [createdById], references: [id])
+  
+  documents   Document[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+enum DocumentStatus {
+  DRAFT
+  ACTIVE
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  ARCHIVED
+  DELETED
+}
+
+model Document {
+  id            Int            @id @default(autoincrement())
+
+  title         String
+  description   String?
+
+  originalName  String
+  fileName      String
+  mimeType      String
+  fileSize      Int
+
+  bucketName    String
+  objectKey     String         @unique
+
+  status        DocumentStatus @default(ACTIVE)
+  isArchived    Boolean        @default(false)
+  archivedAt    DateTime?
+  archivedBy    Int?
+
+  isDeleted     Boolean        @default(false)
+  deletedAt     DateTime?
+  deletedBy     Int?
+
+  dept_id       Int
+  folder_id     Int
+  uploaded_by   Int
+
+  folder        Folder         @relation(fields: [folder_id], references: [id])
+  department    Department     @relation(fields: [dept_id], references: [id])
+  uploadedBy    User           @relation(fields: [uploaded_by], references: [id])
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([folder_id])
+  @@index([dept_id])
+  @@index([uploaded_by])
+  @@index([status])
+  @@index([isArchived])
 }
