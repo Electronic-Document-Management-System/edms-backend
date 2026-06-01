@@ -1,55 +1,72 @@
-import { prisma } from "../../config/db.config";
-import { getFileFromMinIO, uploadFileToMinIO } from "../../services/storage/minio.service";
-import { uploadDocData } from "../../types/document";
-import ApiError from "../../utils/ApiError"
-import { generateDocumentObjectKey } from "../../utils/doc.utils";
+import { prisma } from '../../config/db.config';
+import {
+  getFileFromMinIO,
+  uploadFileToMinIO,
+} from '../../services/storage/minio.service';
+import { uploadDocData } from '../../types/document';
+import ApiError from '../../utils/ApiError';
+import { generateDocumentObjectKey } from '../../utils/doc.utils';
 
-export const getAllDocumentsService = async ({ departmentId, folderId, search, status, page, limit, user }: { departmentId?: string, folderId?: string, search?: string, status?: string, page?: number, limit?: number, user: any }) => {
-
+export const getAllDocumentsService = async ({
+  departmentId,
+  folderId,
+  search,
+  status,
+  page,
+  limit,
+  user,
+}: {
+  departmentId?: number;
+  folderId?: number;
+  search?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+  user: any;
+}) => {
   const where: any = {};
 
   if (departmentId) {
     where.dept_id = departmentId;
-  };
+  }
 
   if (folderId) {
     where.folder_id = folderId;
-  };
+  }
 
   if (status) {
     where.status = status;
-  };
+  }
 
   if (search) {
     where.OR = [
-      { title: { contains: search, mode: "insensitive" } },
-      { description: { contains: search, mode: "insensitive" } },
-    ]
-  };
+      { title: { contains: search, mode: 'insensitive' } },
+      { description: { contains: search, mode: 'insensitive' } },
+    ];
+  }
 
   const documents = await prisma.document.findMany({
     where,
     skip: (page! - 1) * limit!,
     take: limit!,
     orderBy: {
-      createdAt: "desc"
-    }
-  })
+      createdAt: 'desc',
+    },
+  });
 
   return documents;
 };
 
 export const getDocumentByIdService = async (documentId: number) => {
-
   const document = await prisma.document.findUnique({
     where: {
-      id: documentId
-    }
+      id: documentId,
+    },
   });
 
   if (!document) {
     throw new ApiError(404, 'Document not found.');
-  };
+  }
 
   return document;
 };
@@ -58,16 +75,15 @@ export const uploadSingleDocumentService = async (
   documentData: uploadDocData,
   file: Express.Multer.File | undefined,
 ) => {
-
   const { title, description, folder_id, dept_id, uploaded_by } = documentData;
 
   if (!folder_id || Number.isNaN(folder_id)) {
     throw new ApiError(400, 'Valid folder ID is required.');
-  };
+  }
 
   if (!dept_id || Number.isNaN(dept_id)) {
     throw new ApiError(400, 'Valid department ID is required.');
-  };
+  }
 
   if (!file) {
     throw new ApiError(400, 'Document file is required.');
@@ -85,7 +101,7 @@ export const uploadSingleDocumentService = async (
     if (!department) {
       throw new ApiError(404, 'Department not found.');
     }
-  };
+  }
 
   if (folder_id) {
     const folder = await prisma.folder.findUnique({
@@ -103,7 +119,7 @@ export const uploadSingleDocumentService = async (
 
   if (!uploadedFile) {
     throw new ApiError(500, 'Failed to upload document to storage.');
-  };
+  }
 
   const document = await prisma.document.create({
     data: {
@@ -119,7 +135,7 @@ export const uploadSingleDocumentService = async (
       fileSize: uploadedFile.fileSize,
       bucketName: uploadedFile.bucketName,
       objectKey: uploadedFile.objectKey,
-    }
+    },
   });
 
   return document;
@@ -129,7 +145,6 @@ export const uploadBulkDocumentsService = async (
   documentData: uploadDocData,
   files: Express.Multer.File[] | undefined,
 ) => {
-
   const { title, description, folder_id, dept_id, uploaded_by } = documentData;
 
   if (!folder_id || Number.isNaN(folder_id)) {
@@ -182,12 +197,22 @@ export const uploadBulkDocumentsService = async (
         fileSize: uploadedFile.fileSize,
         bucketName: uploadedFile.bucketName,
         objectKey: uploadedFile.objectKey,
-      }
-    })
+      };
+    }),
   );
 
-  const documents = await prisma.document.createMany({ data: documentsData });
-  return documents;
+  const documents = await prisma.$transaction(
+    documentsData.map((document) =>
+      prisma.document.create({
+        data: document,
+      }),
+    ),
+  );
+
+  return {
+    count: documents.length,
+    documents,
+  };
 };
 
 export const updateDocumentService = async (
@@ -196,7 +221,7 @@ export const updateDocumentService = async (
 ) => {
   if (!documentId || Number.isNaN(documentId)) {
     throw new ApiError(400, 'Valid document ID is required.');
-  };
+  }
 
   const document = await prisma.document.findUnique({
     where: {
@@ -333,10 +358,9 @@ export const restoreDocumentService = async (documentId: number) => {
   return restoredDocument;
 };
 
-export const searchDocumentsService = async () => { };
+export const searchDocumentsService = async () => {};
 
 export const downloadDocumentService = async (documentId: number) => {
-
   const document = await prisma.document.findUnique({
     where: { id: documentId },
   });
@@ -353,24 +377,30 @@ export const downloadDocumentService = async (documentId: number) => {
   };
 };
 
-export const archiveDocumentService = async (documentId: number, userId: number) => {
+export const archiveDocumentService = async (
+  documentId: number,
+  userId: number,
+) => {
   const document = await prisma.document.findUnique({
     where: {
-      id: documentId
-    }
+      id: documentId,
+    },
   });
 
   if (!document) {
-    throw new ApiError(404, "Document not found.");
-  };
+    throw new ApiError(404, 'Document not found.');
+  }
 
   if (document.isDeleted) {
-    throw new ApiError(400, "Document cannot be archived because it is deleted.");
+    throw new ApiError(
+      400,
+      'Document cannot be archived because it is deleted.',
+    );
   }
 
   if (document.isArchived) {
-    throw new ApiError(400, "Document is already archived.");
-  };
+    throw new ApiError(400, 'Document is already archived.');
+  }
 
   const archivedDocument = await prisma.document.update({
     where: { id: documentId },
@@ -379,7 +409,7 @@ export const archiveDocumentService = async (documentId: number, userId: number)
       archivedAt: new Date(),
       status: 'ARCHIVED',
       archivedBy: userId,
-    }
+    },
   });
 
   return archivedDocument;
