@@ -22,8 +22,13 @@ import ApiError from "../../utils/ApiError";
  */
 export const getAllDocuments = asyncHandler(async (req: Request, res: Response) => {
 
-    const departmentId = req.query.departmentId as string | undefined;
-    const folderId = req.query.folderId as string | undefined;
+    const departmentId = req.query.departmentId
+      ? Number(req.query.departmentId)
+      : undefined;
+
+    const folderId = req.query.folderId
+      ? Number(req.query.folderId)
+      : undefined;
 
     const search = req.query.search as string | undefined;
     const status = req.query.status as string | undefined;
@@ -38,7 +43,7 @@ export const getAllDocuments = asyncHandler(async (req: Request, res: Response) 
         .json(
             new ApiResponse(
                 200,
-                allDocuments,
+                { documents: allDocuments },
                 'All documents retrieved successfully'
             )
         );
@@ -59,7 +64,7 @@ export const getDocumentById = asyncHandler(async (req: Request, res: Response) 
         .json(
             new ApiResponse(
                 200,
-                document,
+                { document },
                 'Document retrieved successfully'
             )
         );
@@ -95,7 +100,7 @@ export const uploadDocument = asyncHandler(async (req: Request, res: Response) =
         .json(
             new ApiResponse(
                 201,
-                newDocument,
+                { document: newDocument },
                 'Document created successfully'
             )
         );
@@ -208,7 +213,7 @@ export const removeDocument = asyncHandler(async (req: Request, res: Response) =
         .json(
             new ApiResponse(
                 200,
-                removedDocument,
+                { document: removedDocument },
                 'Document removed successfully'
             )
         );
@@ -230,7 +235,7 @@ export const archiveDocument = asyncHandler(async (req: Request, res: Response) 
         .json(
             new ApiResponse(
                 200,
-                archivedDocument,
+                { document: archivedDocument },
                 'Document archived successfully'
             )
         );
@@ -244,17 +249,17 @@ export const archiveDocument = asyncHandler(async (req: Request, res: Response) 
 export const downloadDocument = asyncHandler(async (req: Request, res: Response) => {
 
     const documentId = Number(req.params.id);
-    const downloadedDocument = await downloadDocumentService(documentId);
+    const {fileStream, document} = await downloadDocumentService(documentId);
 
-    return res
+    res
         .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                downloadedDocument,
-                'Document downloaded successfully'
-            )
-        );
+        .setHeader('Content-Type', document.mimeType)
+        .setHeader(
+            'Content-Disposition',
+            `attachment; filename="${document.originalName}"`,
+    );
+
+    fileStream.pipe(res);
 });
 
 /**
@@ -272,7 +277,7 @@ export const restoreDocument = asyncHandler(async (req: Request, res: Response) 
         .json(
             new ApiResponse(
                 200,
-                restoredDocument,
+                { document: restoredDocument },
                 'Document restored successfully'
             )
         );

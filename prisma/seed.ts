@@ -1,5 +1,9 @@
 import { prisma } from '../src/config/db.config';
 import logger from '../src/logger/winston.logger';
+import bcrypt from 'bcrypt';
+
+const ADMIN_EMAIL = 'admin@edms.com';
+const ADMIN_PASSWORD = 'Admin@123';
 
 const roles = [
   'Admin',
@@ -14,44 +18,83 @@ const permissions = [
   // Role / Permission management
   { resource: 'role', action: 'create', scope: 'all' },
   { resource: 'role', action: 'assign', scope: 'all' },
+  { resource: 'role', action: 'read', scope: 'all' },
+  { resource: 'role', action: 'update', scope: 'all' },
+  { resource: 'role', action: 'delete', scope: 'all' },
+
   { resource: 'permission', action: 'create', scope: 'all' },
   { resource: 'permission', action: 'assign', scope: 'all' },
+  { resource: 'permission', action: 'read', scope: 'all' },
+  { resource: 'permission', action: 'update', scope: 'all' },
+  { resource: 'permission', action: 'delete', scope: 'all' },
+
+  { resource: 'rolePermission', action: 'assign', scope: 'all' },
+  { resource: 'rolePermission', action: 'remove', scope: 'all' },
+
+  { resource: 'userRole', action: 'assign', scope: 'all' },
+  { resource: 'userRole', action: 'remove', scope: 'all' },
+  { resource: 'userRole', action: 'read', scope: 'all' },
 
   // User management
   { resource: 'user', action: 'create', scope: 'all' },
+  { resource: 'user', action: 'read', scope: 'all' },
   { resource: 'user', action: 'update', scope: 'all' },
   { resource: 'user', action: 'delete', scope: 'all' },
+  { resource: 'user', action: 'disable', scope: 'all' },
+  { resource: 'user', action: 'activate', scope: 'all' },
 
   // Department management
   { resource: 'department', action: 'create', scope: 'all' },
+  { resource: 'department', action: 'read', scope: 'all' },
   { resource: 'department', action: 'update', scope: 'all' },
   { resource: 'department', action: 'delete', scope: 'all' },
+
+  // Folder management
+  { resource: 'folder', action: 'create', scope: 'all' },
+  { resource: 'folder', action: 'read', scope: 'all' },
+  { resource: 'folder', action: 'update', scope: 'all' },
+  { resource: 'folder', action: 'delete', scope: 'all' },
+  { resource: 'folder', action: 'move', scope: 'all' },
 
   // Document management
   { resource: 'document', action: 'upload', scope: 'own' },
   { resource: 'document', action: 'upload', scope: 'all' },
+
   { resource: 'document', action: 'read', scope: 'own' },
   { resource: 'document', action: 'read', scope: 'department' },
   { resource: 'document', action: 'read', scope: 'assigned' },
   { resource: 'document', action: 'read', scope: 'shared' },
   { resource: 'document', action: 'read', scope: 'all' },
+
   { resource: 'document', action: 'download', scope: 'own' },
   { resource: 'document', action: 'download', scope: 'department' },
   { resource: 'document', action: 'download', scope: 'assigned' },
   { resource: 'document', action: 'download', scope: 'shared' },
   { resource: 'document', action: 'download', scope: 'all' },
+
+  { resource: 'document', action: 'update', scope: 'own' },
+  { resource: 'document', action: 'update', scope: 'department' },
   { resource: 'document', action: 'update', scope: 'all' },
+
   { resource: 'document', action: 'delete', scope: 'own' },
   { resource: 'document', action: 'delete', scope: 'department' },
   { resource: 'document', action: 'delete', scope: 'all' },
+
   { resource: 'document', action: 'share', scope: 'own' },
   { resource: 'document', action: 'share', scope: 'all' },
+
   { resource: 'document', action: 'approve', scope: 'department' },
   { resource: 'document', action: 'approve', scope: 'assigned' },
+
   { resource: 'document', action: 'reject', scope: 'department' },
   { resource: 'document', action: 'reject', scope: 'assigned' },
+
+  { resource: 'document', action: 'archive', scope: 'own' },
   { resource: 'document', action: 'archive', scope: 'department' },
   { resource: 'document', action: 'archive', scope: 'all' },
+
+  { resource: 'document', action: 'restore', scope: 'own' },
+  { resource: 'document', action: 'restore', scope: 'department' },
   { resource: 'document', action: 'restore', scope: 'all' },
 
   // Metadata
@@ -79,54 +122,133 @@ const rolePermissions: Record<string, string[]> = {
   Admin: [
     'role:create:all',
     'role:assign:all',
+    'role:read:all',
+    'role:update:all',
+    'role:delete:all',
+
     'permission:create:all',
     'permission:assign:all',
+    'permission:read:all',
+    'permission:update:all',
+    'permission:delete:all',
+
+    'rolePermission:assign:all',
+    'rolePermission:remove:all',
+
+    'userRole:assign:all',
+    'userRole:remove:all',
+    'userRole:read:all',
+
     'user:create:all',
+    'user:read:all',
     'user:update:all',
     'user:delete:all',
+    'user:disable:all',
+    'user:activate:all',
+
     'department:create:all',
+    'department:read:all',
     'department:update:all',
     'department:delete:all',
+
+    'folder:create:all',
+    'folder:read:all',
+    'folder:update:all',
+    'folder:delete:all',
+    'folder:move:all',
+
+    'document:upload:own',
     'document:upload:all',
+
+    'document:read:own',
+    'document:read:department',
+    'document:read:assigned',
+    'document:read:shared',
     'document:read:all',
+
+    'document:update:own',
+    'document:update:department',
     'document:update:all',
+
+    'document:delete:own',
+    'document:delete:department',
     'document:delete:all',
+
+    'document:share:own',
     'document:share:all',
+
+    'document:download:own',
+    'document:download:department',
+    'document:download:assigned',
+    'document:download:shared',
     'document:download:all',
+
+    'document:archive:own',
+    'document:archive:department',
     'document:archive:all',
+
+    'document:restore:own',
+    'document:restore:department',
     'document:restore:all',
+
     'metadataField:create:all',
     'metadataField:update:all',
     'metadataField:delete:all',
+
     'documentMetadata:create:all',
     'documentMetadata:update:all',
     'documentMetadata:delete:all',
+
     'notification:read:own',
   ],
 
   Employee: [
     'document:upload:own',
+
     'document:read:own',
     'document:read:department',
+
+    'document:update:own',
+    'document:delete:own',
+    'document:archive:own',
+    'document:restore:own',
+
     'document:share:own',
     'document:download:own',
-    'document:delete:own',
+
     'documentMetadata:create:own',
     'documentMetadata:update:own',
+
     'notification:read:own',
   ],
 
   Manager: [
     'document:upload:own',
+
     'document:read:own',
     'document:read:department',
+
+    'document:update:own',
+    'document:update:department',
+
+    'document:download:own',
     'document:download:department',
+
+    'document:delete:own',
     'document:delete:department',
+
+    'document:archive:own',
+    'document:archive:department',
+
+    'document:restore:own',
+    'document:restore:department',
+
     'document:approve:department',
     'document:reject:department',
-    'document:archive:department',
+
     'documentMetadata:create:own',
     'documentMetadata:update:own',
+
     'workflow:assign:department',
     'notification:read:own',
   ],
@@ -150,18 +272,9 @@ const rolePermissions: Record<string, string[]> = {
   'External User': ['document:read:shared', 'document:download:shared'],
 };
 
-function createPermissionKey(permission: {
-  resource: string;
-  action: string;
-  scope: string;
-}) {
-  return `${permission.resource}:${permission.action}:${permission.scope}`;
-}
-
 async function main() {
   logger.info('🌱 RBAC seed started...');
 
-  // 1. Create permissions
   for (const permission of permissions) {
     await prisma.permission.upsert({
       where: {
@@ -178,7 +291,6 @@ async function main() {
 
   logger.info('✅ Permissions seeded');
 
-  // 2. Create roles
   for (const roleName of roles) {
     await prisma.role.upsert({
       where: {
@@ -193,7 +305,6 @@ async function main() {
 
   logger.info('✅ Roles seeded');
 
-  // 3. Assign permissions to roles
   for (const [roleName, permissionKeys] of Object.entries(rolePermissions)) {
     const role = await prisma.role.findUnique({
       where: {
@@ -235,12 +346,70 @@ async function main() {
   }
 
   logger.info('✅ Role permissions mapped');
-  logger.info('🎉 RBAC seed completed successfully');
+
+  const adminDepartment = await prisma.department.upsert({
+    where: {
+      name: 'Administration',
+    },
+    update: {},
+    create: {
+      name: 'Administration',
+    },
+  });
+
+  const adminRole = await prisma.role.findUnique({
+    where: {
+      name: 'Admin',
+    },
+  });
+
+  if (!adminRole) {
+    throw new Error('Admin role not found. Please seed roles first.');
+  }
+
+  const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
+
+  const adminUser = await prisma.user.upsert({
+    where: {
+      email: ADMIN_EMAIL,
+    },
+    update: {
+      name: 'System Admin',
+      password_hash: passwordHash,
+      dept_id: adminDepartment.id,
+      isActive: true,
+    },
+    create: {
+      name: 'System Admin',
+      email: ADMIN_EMAIL,
+      password_hash: passwordHash,
+      dept_id: adminDepartment.id,
+      isActive: true,
+    },
+  });
+
+  await prisma.userRole.upsert({
+    where: {
+      user_id_role_id: {
+        user_id: adminUser.id,
+        role_id: adminRole.id,
+      },
+    },
+    update: {},
+    create: {
+      user_id: adminUser.id,
+      role_id: adminRole.id,
+    },
+  });
+
+  logger.info(`✅ Admin user seeded: ${ADMIN_EMAIL}`);
+  logger.info(`🔐 Admin password: ${ADMIN_PASSWORD}`);
+  logger.info('🎉 Database seed completed successfully');
 }
 
 main()
   .catch((error) => {
-    logger.error('❌ RBAC seed failed:', error);
+    logger.error('❌ Seed failed:', error);
     process.exit(1);
   })
   .finally(async () => {
