@@ -5,7 +5,7 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 import { prisma } from '../config/db.config';
 
 interface AccessTokenPayload extends JwtPayload {
-  userId: number;
+  id: number;
   email?: string;
 }
 
@@ -45,18 +45,20 @@ export const requireAuth = asyncHandler(
       throw new ApiError(401, 'Invalid or expired access token.');
     }
 
-    if (!decodedToken.userId) {
+    if (!decodedToken.id) {
       throw new ApiError(401, 'Invalid access token payload.');
     }
 
     const user = await prisma.user.findUnique({
       where: {
-        id: decodedToken.userId,
+        id: decodedToken.id,
       },
       select: {
         id: true,
         email: true,
         name: true,
+        isActive: true,
+        dept_id: true,
         createdAt: true,
         updatedAt: true,
       },
