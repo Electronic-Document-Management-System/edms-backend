@@ -99,11 +99,14 @@ const permissions = [
 
   // Metadata
   { resource: 'metadataField', action: 'create', scope: 'all' },
+  { resource: 'metadataField', action: 'read', scope: 'all' },
   { resource: 'metadataField', action: 'update', scope: 'all' },
   { resource: 'metadataField', action: 'delete', scope: 'all' },
 
   { resource: 'documentMetadata', action: 'create', scope: 'own' },
   { resource: 'documentMetadata', action: 'create', scope: 'all' },
+  { resource: 'documentMetadata', action: 'read', scope: 'own' },
+  { resource: 'documentMetadata', action: 'read', scope: 'all' },
   { resource: 'documentMetadata', action: 'update', scope: 'own' },
   { resource: 'documentMetadata', action: 'update', scope: 'all' },
   { resource: 'documentMetadata', action: 'delete', scope: 'all' },
@@ -192,10 +195,12 @@ const rolePermissions: Record<string, string[]> = {
     'document:restore:all',
 
     'metadataField:create:all',
+    'metadataField:read:all',
     'metadataField:update:all',
     'metadataField:delete:all',
 
     'documentMetadata:create:all',
+    'documentMetadata:read:all',
     'documentMetadata:update:all',
     'documentMetadata:delete:all',
 
@@ -217,6 +222,7 @@ const rolePermissions: Record<string, string[]> = {
     'document:download:own',
 
     'documentMetadata:create:own',
+    'documentMetadata:read:own',
     'documentMetadata:update:own',
 
     'notification:read:own',
@@ -247,6 +253,7 @@ const rolePermissions: Record<string, string[]> = {
     'document:reject:department',
 
     'documentMetadata:create:own',
+    'documentMetadata:read:own',
     'documentMetadata:update:own',
 
     'workflow:assign:department',
