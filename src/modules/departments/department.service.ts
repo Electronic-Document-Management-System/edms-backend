@@ -98,25 +98,64 @@ export const updateDepartmentService = async (
 };
 
 export const deleteDepartmentService = async (departmentId: number) => {
-    if (!departmentId || Number.isNaN(departmentId)) {
-        throw new ApiError(400, 'Valid department ID is required.');
-    }
+  if (!departmentId || Number.isNaN(departmentId)) {
+    throw new ApiError(400, 'Valid department ID is required.');
+  }
 
-    const department = await prisma.department.findUnique({
-        where: {
-            id: departmentId,
-        },
-    });
+  const department = await prisma.department.findUnique({
+    where: {
+      id: departmentId,
+    },
+  });
 
-    if (!department) {
-        throw new ApiError(404, 'Department not found.');
-    }
+  if (!department) {
+    throw new ApiError(404, 'Department not found.');
+  }
 
-    const deleted = await prisma.department.delete({
-        where: {
-            id: departmentId,
-        },
-    });
+  const userCount = await prisma.user.count({
+    where: {
+      dept_id: departmentId,
+    },
+  });
 
-    return deleted;
+  if (userCount > 0) {
+    throw new ApiError(
+      409,
+      'Department cannot be deleted because it has assigned users.',
+    );
+  }
+
+  const folderCount = await prisma.folder.count({
+    where: {
+      dept_id: departmentId,
+    },
+  });
+
+  if (folderCount > 0) {
+    throw new ApiError(
+      409,
+      'Department cannot be deleted because it contains folders.',
+    );
+  }
+
+  const documentCount = await prisma.document.count({
+    where: {
+      dept_id: departmentId,
+    },
+  });
+
+  if (documentCount > 0) {
+    throw new ApiError(
+      409,
+      'Department cannot be deleted because it contains documents.',
+    );
+  }
+
+  const deletedDepartment = await prisma.department.delete({
+    where: {
+      id: departmentId,
+    },
+  });
+
+  return deletedDepartment;
 };
