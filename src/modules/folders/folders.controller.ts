@@ -2,6 +2,8 @@ import asyncHandler from "../../utils/asyncHandler";
 import { Request, Response } from "express";
 import { ApiResponse } from "../../utils/ApiResponse";
 import { createFolderService, deleteFolderService, getFolderByIdService, getFoldersService, moveFolderService, updateFolderService } from "./folders.service";
+import ApiError from "../../utils/ApiError";
+import logger from "../../logger/winston.logger";
 
 /**
  * @description Retrieves all folders available in the system.
@@ -9,16 +11,37 @@ import { createFolderService, deleteFolderService, getFolderByIdService, getFold
  * @access Private
  */
 export const getFolders = asyncHandler(async (req: Request, res: Response) => {
+    const departmentId = req.query.departmentId
+        ? Number(req.query.departmentId)
+        : undefined;
 
-    const folders = await getFoldersService();
-    res.status(200)
-        .json(
-            new ApiResponse(
-                200,
-                folders,
-                "Folders retrieved successfully"
-            )
-        );
+    const parentId =
+        req.query.parentId === 'null'
+            ? null
+            : req.query.parentId
+                ? Number(req.query.parentId)
+                : undefined;
+
+    if (departmentId !== undefined && Number.isNaN(departmentId)) {
+        throw new ApiError(400, 'Invalid department ID.');
+    }
+
+    if (parentId !== undefined && parentId !== null && Number.isNaN(parentId)) {
+        throw new ApiError(400, 'Invalid parent folder ID.');
+    }
+
+    const folders = await getFoldersService({
+        departmentId,
+        parentId,
+    });
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            { folders },
+            'Folders retrieved successfully',
+        ),
+    );
 });
 
 /**
@@ -35,7 +58,7 @@ export const getFolderById = asyncHandler(async (req: Request, res: Response) =>
         .json(
             new ApiResponse(
                 200,
-                folder,
+                { folder },
                 "Folder retrieved successfully"
             )
         );
@@ -49,13 +72,14 @@ export const getFolderById = asyncHandler(async (req: Request, res: Response) =>
 export const createFolder = asyncHandler(async (req: Request, res: Response) => {
 
     const folder = req.body;
-    const createdFolder = await createFolderService(folder);
+    const userId = req.user?.id;
+    const createdFolder = await createFolderService(folder, userId);
 
     res.status(201)
         .json(
             new ApiResponse(
                 201,
-                createdFolder,
+                { folder: createdFolder },
                 "Folder created successfully"
             )
         );
@@ -75,7 +99,7 @@ export const updateFolder = asyncHandler(async (req: Request, res: Response) => 
         .json(
             new ApiResponse(
                 200,
-                updatedFolder,
+                { folder: updatedFolder },
                 "Folder updated successfully"
             )
         );
@@ -93,7 +117,7 @@ export const deleteFolder = asyncHandler(async (req: Request, res: Response) => 
         .json(
             new ApiResponse(
                 200,
-                deletedFolder,
+                { folder: deletedFolder },
                 "Folder deleted successfully"
             )
         );
@@ -114,7 +138,7 @@ export const moveFolder = asyncHandler(async (req: Request, res: Response) => {
         .json(
             new ApiResponse(
                 200,
-                movedFolder,
+                { folder: movedFolder },
                 "Folder moved successfully"
             )
         );

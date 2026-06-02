@@ -1,13 +1,28 @@
 import { prisma } from "../../config/db.config";
-import { FolderData } from "../../types/folder";
+import { FolderData, GetFoldersFilter } from "../../types/folder";
 import ApiError from "../../utils/ApiError";
 
-export const getFoldersService = async () => {
-    return await prisma.folder.findMany({
+export const getFoldersService = async (
+    { departmentId, parentId }: GetFoldersFilter = {},
+) => {
+    const where: any = {};
+
+    if (departmentId !== undefined) {
+        where.dept_id = departmentId;
+    }
+
+    if (parentId !== undefined) {
+        where.parent_id = parentId;
+    }
+
+    const folders = await prisma.folder.findMany({
+        where,
         orderBy: {
-            name: "asc",
+            name: 'asc',
         },
     });
+
+    return folders;
 };
 
 export const getFolderByIdService = async (folderId: number) => {
@@ -31,7 +46,7 @@ export const getFolderByIdService = async (folderId: number) => {
     return folder;
 };
 
-export const createFolderService = async (folder: FolderData) => {
+export const createFolderService = async (folder: FolderData, userId?: number) => {
     if (!folder?.name) {
         throw new ApiError(400, "Folder name is required");
     }
@@ -39,7 +54,7 @@ export const createFolderService = async (folder: FolderData) => {
     const existingFolder = await prisma.folder.findFirst({
         where: {
             name: folder.name,
-            parent_id: folder.parentId ?? null,
+            parent_id: folder.parent_id ?? null,
         },
     });
 
@@ -47,10 +62,10 @@ export const createFolderService = async (folder: FolderData) => {
         throw new ApiError(409, "Folder with this name already exists in this location");
     }
 
-    if (folder.parentId) {
+    if (folder.parent_id) {
         const parentFolder = await prisma.folder.findUnique({
             where: {
-                id: folder.parentId,
+                id: folder.parent_id,
             },
         });
 
@@ -60,7 +75,13 @@ export const createFolderService = async (folder: FolderData) => {
     }
 
     return await prisma.folder.create({
-        data: folder,
+        data: {
+            name: folder.name,
+            description: folder.description,
+            parent_id: folder.parent_id,
+            createdById: userId,
+            dept_id: folder.dept_id,
+        }
     });
 };
 
@@ -108,31 +129,52 @@ export const updateFolderService = async (
 
 export const deleteFolderService = async (folderId: number) => {
     if (!folderId || Number.isNaN(folderId)) {
-        throw new ApiError(400, "Valid folder ID is required");
+        throw new ApiError(400, 'Valid folder ID is required.');
     }
 
     const folder = await prisma.folder.findUnique({
         where: {
             id: folderId,
         },
-        include: {
-            children: true,
-        },
     });
 
     if (!folder) {
-        throw new ApiError(404, "Folder not found");
+        throw new ApiError(404, 'Folder not found.');
     }
 
-    if (folder.children.length > 0) {
-        throw new ApiError(400, "Folder cannot be deleted because it contains child folders");
+    const childFolderCount = await prisma.folder.count({
+        where: {
+            parent_id: folderId,
+        },
+    });
+
+    if (childFolderCount > 0) {
+        throw new ApiError(
+            409,
+            'Folder cannot be deleted because it contains subfolders.',
+        );
     }
 
-    return await prisma.folder.delete({
+    const documentCount = await prisma.document.count({
+        where: {
+            folder_id: folderId,
+        },
+    });
+
+    if (documentCount > 0) {
+        throw new ApiError(
+            409,
+            'Folder cannot be deleted because it contains documents.',
+        );
+    }
+
+    const deletedFolder = await prisma.folder.delete({
         where: {
             id: folderId,
         },
     });
+
+    return deletedFolder;
 };
 
 export const moveFolderService = async (
