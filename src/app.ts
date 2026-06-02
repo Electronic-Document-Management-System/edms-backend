@@ -59,6 +59,7 @@ import reportRouter from './modules/reports/report.route';
 import metadataRouter from './modules/metadata/metadata.route';
 import workflowRouter from './modules/workflow/workflow.route';
 import notificationRouter from './modules/notification/notification.route';
+import { errorHandler } from './middlewares/error.middleware';
 
 app.use(router);
 app.use('/api/v1/tenant/auth', authRouter);
@@ -74,4 +75,5 @@ app.use('/api/v1/tenant/metadata', metadataRouter);
 app.use('/api/v1/tenant/workflow', workflowRouter);
 app.use('/api/v1/tenant/notification', notificationRouter);
 
+app.use(errorHandler);
 export default app;
