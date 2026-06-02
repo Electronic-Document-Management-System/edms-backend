@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAuth } from '../../middlewares/auth.middleware';
+import { requireAuth } from '@/middlewares/auth.middleware';
 import {
   archiveDocument,
   downloadDocument,
@@ -15,7 +15,8 @@ import {
 import {
   requireAnyPermission,
   requirePermission,
-} from '../../middlewares/rbac.middleware';
+} from '@/middlewares/rbac.middleware';
+
 // Workflow routes
 import {
   approveDocument,
@@ -24,33 +25,33 @@ import {
   reassignReviewer,
   rejectDocument,
   submitDocument,
-} from '../workflow/workflow.controller';
+} from '@/modules/workflow/workflow.controller';
 import {
   addDocumentMetadata,
   getDocumentMetadata,
   removeDocumentMetadata,
   updateDocumentMetadata,
-} from '../metadata/metadata.controller';
+} from '@/modules/metadata/metadata.controller';
 import {
   getSharedDocuments,
   removeShare,
   shareDocument,
-} from '../sharing/sharing.controller';
+} from '@/modules/sharing/sharing.controller';
 import {
   addDocumentComment,
   getDocumentComments,
-} from '../comment/comment.controller';
+} from '@/modules/comment/comment.controller';
 import {
   createDocumentVersion,
   getDocumentVersionById,
   getDocumentVersions,
   restoreDocumentVersion,
-} from '../document_versions/documentVersions.controller';
-import { ACTIONS, RESOURCES, SCOPES } from '../../constants';
+} from '@/modules/document_versions/documentVersions.controller';
 import {
   uploadMultipleDocumentFiles,
   uploadSingleDocumentFile,
-} from '../../middlewares/upload.middleware';
+} from '@/middlewares/upload.middleware';
+import { ACTIONS, RESOURCES, SCOPES } from '@/constants';
 
 const router = Router();
 
@@ -200,73 +201,101 @@ router.route('/search').get(requireAuth, requirePermission, searchDocuments);
 // Document workflow routes
 
 router
-  .route('/:documentId/submit')
+  .route('/:id/submit')
   .post(requireAuth, requirePermission, submitDocument);
 
 router
-  .route('/:documentId/approve')
+  .route('/:id/approve')
   .post(requireAuth, requirePermission, approveDocument);
 
 router
-  .route('/:documentId/reject')
+  .route('/:id/reject')
   .post(requireAuth, requirePermission, rejectDocument);
 
 router
-  .route('/:documentId/assign-reviewer')
+  .route('/:id/assign-reviewer')
   .post(requireAuth, requirePermission, assignReviewer);
 
 router
-  .route('/:documentId/reassign-reviewer')
+  .route('/:id/reassign-reviewer')
   .post(requireAuth, requirePermission, reassignReviewer);
 
 router
-  .route('/:documentId/workflow-status')
+  .route('/:id/workflow-status')
   .get(requireAuth, requirePermission, getWorkflowStatus);
 
 // Document metadata routes
 router
   .route('/:documentId/metadata')
-  .get(requireAuth, requirePermission, getDocumentMetadata)
-  .post(requireAuth, requirePermission, addDocumentMetadata)
-  .patch(requireAuth, requirePermission, updateDocumentMetadata);
+  .get(
+    requireAuth,
+    requirePermission({
+      resource: RESOURCES.DOCUMENT_METADATA,
+      action: ACTIONS.READ,
+      scope: SCOPES.ALL,
+    }),
+    getDocumentMetadata)
+  .post(requireAuth,
+    requirePermission({
+      resource: RESOURCES.DOCUMENT_METADATA,
+      action: ACTIONS.CREATE,
+      scope: SCOPES.ALL
+    }),
+    addDocumentMetadata)
 
 router
-  .route('/:documentId/metadata/:metadataId')
-  .delete(requireAuth, requirePermission, removeDocumentMetadata);
+  .route('/:documentId/metadata/:metadataFieldId')
+  .patch(
+    requireAuth,
+    requirePermission({
+      resource: RESOURCES.DOCUMENT_METADATA,
+      action: ACTIONS.UPDATE,
+      scope: SCOPES.ALL,
+    }),
+    updateDocumentMetadata)
+  .delete(
+    requireAuth,
+    requirePermission({
+      resource: RESOURCES.DOCUMENT_METADATA,
+      action: ACTIONS.DELETE,
+      scope: SCOPES.ALL,
+    }),
+    removeDocumentMetadata,
+  );
 
 // Document sharing routes
 
 router
-  .route('/:documentId/share')
+  .route('/:id/share')
   .get(requireAuth, requirePermission, getSharedDocuments);
 
 router
-  .route('/:documentId/shares')
+  .route('/:id/shares')
   .post(requireAuth, requirePermission, shareDocument);
 
 router
-  .route('/:documentId/shares/:shareId')
+  .route('/:id/shares/:shareId')
   .delete(requireAuth, requirePermission, removeShare);
 
 // Comment routes
 router
-  .route('/:documentId/comments')
+  .route('/:id/comments')
   .get(requireAuth, requirePermission, getDocumentComments)
   .post(requireAuth, requirePermission, addDocumentComment);
 
 // Document versions routes
 router
-  .route('/:documentId/versions')
+  .route('/:id/versions')
   .get(requireAuth, requirePermission, getDocumentVersions)
   .post(requireAuth, requirePermission, createDocumentVersion);
 
 router
-  .route('/:documentId/versions/:versionId')
+  .route('/:id/versions/:versionId')
   .get(requireAuth, requirePermission, getDocumentVersionById)
   .post(requireAuth, requirePermission, createDocumentVersion);
 
 router
-  .route('/:documentId/versions/:versionId/restore')
+  .route('/:id/versions/:versionId/restore')
   .patch(requireAuth, requirePermission, restoreDocumentVersion);
 
 export default router;
