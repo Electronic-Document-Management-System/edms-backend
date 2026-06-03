@@ -3,6 +3,11 @@ import asyncHandler from "@/utils/asyncHandler";
 import { getDocumentsSharedWithMeService, removeShareService, shareDocumentService, getDocumentSharesService } from "./sharing.service";
 import { ApiResponse } from "@/utils/ApiResponse";
 
+/**
+ * @route POST /api/v1/sharing/share
+ * @desc Share a document with a user or external email
+ * @access Private
+ */
 export const shareDocument = asyncHandler(async (req: Request, res: Response) => {
     // sharedWithUserId
     // externalEmail
@@ -23,6 +28,11 @@ export const shareDocument = asyncHandler(async (req: Request, res: Response) =>
     )
 });
 
+/**
+ * @route GET /api/v1/sharing/shared-with-me
+ * @desc Get documents shared with the current user
+ * @access Private
+ */
 export const getDocumentsSharedWithMe = asyncHandler(async (req: Request, res: Response) => {
     // document sharing list
     const userId = Number(req.user?.id);
@@ -37,6 +47,11 @@ export const getDocumentsSharedWithMe = asyncHandler(async (req: Request, res: R
     )
 });
 
+/**
+ * @route GET /api/v1/sharing/document/:documentId/shares
+ * @desc Get shares for a specific document
+ * @access Private
+ */
 export const getDocumentShares = asyncHandler(async (req: Request, res: Response) => {
     // document share view
     const documentId = Number(req.params.documentId);
@@ -51,6 +66,11 @@ export const getDocumentShares = asyncHandler(async (req: Request, res: Response
     )
 });
 
+/**
+ * @route DELETE /api/v1/sharing/document/:documentId/share/:shareId
+ * @desc Remove a share from a document
+ * @access Private
+ */
 export const removeShare = asyncHandler(async (req: Request, res: Response) => {
     // document share removal
     const documentId = Number(req.params.documentId);
