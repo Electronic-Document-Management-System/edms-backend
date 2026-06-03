@@ -12,6 +12,7 @@ export const RESOURCES = {
   COMMENT: 'comment',
   METADATA_FIELD: 'metadataField',
   DOCUMENT_METADATA: 'documentMetadata',
+  DOCUMENT_SHARE: 'documentShare',
   DEPARTMENT: 'department',
   FOLDER: 'folder',
 } as const;
