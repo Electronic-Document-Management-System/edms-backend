@@ -110,6 +110,11 @@ const permissions = [
   { resource: 'documentMetadata', action: 'update', scope: 'own' },
   { resource: 'documentMetadata', action: 'update', scope: 'all' },
   { resource: 'documentMetadata', action: 'delete', scope: 'all' },
+  
+  { resource: 'documentShare', action: 'create', scope: 'all' },
+  { resource: 'documentShare', action: 'read', scope: 'all' },
+  { resource: 'documentShare', action: 'update', scope: 'all' },
+  { resource: 'documentShare', action: 'delete', scope: 'all' },
 
   // Workflow / Comments / Audit / Reports
   { resource: 'workflow', action: 'assign', scope: 'department' },
@@ -204,6 +209,19 @@ const rolePermissions: Record<string, string[]> = {
     'documentMetadata:update:all',
     'documentMetadata:delete:all',
 
+    'documentShare:create:own',
+    'documentShare:create:department',
+    'documentShare:create:all',
+
+    'documentShare:read:own',
+    'documentShare:read:shared',
+    'documentShare:read:department',
+    'documentShare:read:all',
+
+    'documentShare:delete:own',
+    'documentShare:delete:department',
+    'documentShare:delete:all',
+
     'notification:read:own',
   ],
 
@@ -224,6 +242,10 @@ const rolePermissions: Record<string, string[]> = {
     'documentMetadata:create:own',
     'documentMetadata:read:own',
     'documentMetadata:update:own',
+
+    'documentShare:create:own',
+    'documentShare:read:shared',
+    'documentShare:delete:own',
 
     'notification:read:own',
   ],
@@ -256,6 +278,15 @@ const rolePermissions: Record<string, string[]> = {
     'documentMetadata:read:own',
     'documentMetadata:update:own',
 
+    'documentShare:create:own',
+    'documentShare:create:department',
+
+    'documentShare:read:shared',
+    'documentShare:read:department',
+
+    'documentShare:delete:own',
+    'documentShare:delete:department',
+
     'workflow:assign:department',
     'notification:read:own',
   ],
@@ -267,6 +298,7 @@ const rolePermissions: Record<string, string[]> = {
     'document:reject:assigned',
     'comment:create:assigned',
     'notification:read:own',
+    'documentShare:read:shared',
   ],
 
   Auditor: [
@@ -274,6 +306,7 @@ const rolePermissions: Record<string, string[]> = {
     'document:download:all',
     'auditLog:read:all',
     'report:generate:all',
+    'documentShare:read:all',
   ],
 
   'External User': ['document:read:shared', 'document:download:shared'],

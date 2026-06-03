@@ -33,9 +33,10 @@ import {
   updateDocumentMetadata,
 } from '@/modules/metadata/metadata.controller';
 import {
-  getSharedDocuments,
-  removeShare,
+  getDocumentShares,
+  getDocumentsSharedWithMe,
   shareDocument,
+  removeShare
 } from '@/modules/sharing/sharing.controller';
 import {
   addDocumentComment,
@@ -77,6 +78,28 @@ POST   /api/documents/:documentId/assign-reviewer
 POST   /api/documents/:documentId/reassign-reviewer
 GET    /api/documents/:documentId/workflow-status
 */
+
+// Document sharing routes
+// Static route for documents shared with me
+router
+  .route('/shared-with-me')
+  .get(
+    requireAuth,
+    requireAnyPermission([
+      {
+        resource: RESOURCES.DOCUMENT_SHARE,
+        action: ACTIONS.READ,
+        scope: SCOPES.SHARED,
+      },
+      {
+        resource: RESOURCES.DOCUMENT_SHARE,
+        action: ACTIONS.READ,
+        scope: SCOPES.ALL,
+      },
+    ]),
+    getDocumentsSharedWithMe,
+  );
+
 
 // Documents routes
 router
@@ -266,16 +289,73 @@ router
 // Document sharing routes
 
 router
-  .route('/:id/share')
-  .get(requireAuth, requirePermission, getSharedDocuments);
+  .route('/:documentId/shares')
+  .get(
+    requireAuth,
+    requireAnyPermission([
+      {
+        resource: RESOURCES.DOCUMENT_SHARE,
+        action: ACTIONS.READ,
+        scope: SCOPES.OWN,
+      },
+      {
+        resource: RESOURCES.DOCUMENT_SHARE,
+        action: ACTIONS.READ,
+        scope: SCOPES.DEPARTMENT,
+      },
+      {
+        resource: RESOURCES.DOCUMENT_SHARE,
+        action: ACTIONS.READ,
+        scope: SCOPES.ALL,
+      },
+    ]),
+    getDocumentShares,
+  )
+  .post(
+    requireAuth,
+    requireAnyPermission([
+      {
+        resource: RESOURCES.DOCUMENT_SHARE,
+        action: ACTIONS.CREATE,
+        scope: SCOPES.OWN,
+      },
+      {
+        resource: RESOURCES.DOCUMENT_SHARE,
+        action: ACTIONS.CREATE,
+        scope: SCOPES.DEPARTMENT,
+      },
+      {
+        resource: RESOURCES.DOCUMENT_SHARE,
+        action: ACTIONS.CREATE,
+        scope: SCOPES.ALL,
+      },
+    ]),
+    shareDocument,
+  );
 
 router
-  .route('/:id/shares')
-  .post(requireAuth, requirePermission, shareDocument);
-
-router
-  .route('/:id/shares/:shareId')
-  .delete(requireAuth, requirePermission, removeShare);
+  .route('/:documentId/shares/:shareId')
+  .delete(
+    requireAuth,
+    requireAnyPermission([
+      {
+        resource: RESOURCES.DOCUMENT_SHARE,
+        action: ACTIONS.DELETE,
+        scope: SCOPES.OWN,
+      },
+      {
+        resource: RESOURCES.DOCUMENT_SHARE,
+        action: ACTIONS.DELETE,
+        scope: SCOPES.DEPARTMENT,
+      },
+      {
+        resource: RESOURCES.DOCUMENT_SHARE,
+        action: ACTIONS.DELETE,
+        scope: SCOPES.ALL,
+      },
+    ]),
+    removeShare,
+  );
 
 // Comment routes
 router
