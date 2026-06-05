@@ -34,6 +34,8 @@ export const ACTIONS = {
   DISABLE: 'disable',
   REMOVE: 'remove',
   MOVE: 'move',
+  SUBMIT: 'submit',
+  CANCEL: 'cancel',
 } as const;
 
 export const SCOPES = {

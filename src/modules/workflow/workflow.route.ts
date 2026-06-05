@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth.middleware";
-import { requirePermission } from "../../middlewares/rbac.middleware";
-import { createNewWorkflow, finishWorkflow, getAllWorkflows, getWorkflowById, updateWorkflow } from "./workflow.controller";
+import { requireAnyPermission, requirePermission } from "../../middlewares/rbac.middleware";
+import { ACTIONS, RESOURCES, SCOPES } from "@/constants";
+import { getWorkflowsAssignedToMe } from "./workflow.controller";
 
 /**
 GET    /api/workflows
@@ -24,15 +25,35 @@ GET    /api/documents/:documentId/workflow-status
 const router = Router();
 
 router
+    .route('/assigned-to-me')
+    .get(
+        requireAuth,
+        requireAnyPermission(
+            [{
+                resource: RESOURCES.WORKFLOW,
+                action: ACTIONS.READ,
+                scope: SCOPES.ALL
+            },
+            {
+                resource: RESOURCES.WORKFLOW,
+                action: ACTIONS.READ,
+                scope: SCOPES.ASSIGNED
+            }]
+        ),
+        getWorkflowsAssignedToMe
+    );
+
+
+router
     .route("/")
-    .get(requireAuth, requirePermission, getAllWorkflows)
-    .post(requireAuth, requirePermission, createNewWorkflow)
+    .get(requireAuth, requirePermission)
+    .post(requireAuth, requirePermission)
 
 router
     .route("/:id")
-    .get(requireAuth, requirePermission, getWorkflowById)
-    .patch(requireAuth, requirePermission, updateWorkflow)
-    .delete(requireAuth, requirePermission, finishWorkflow)
+    .get(requireAuth, requirePermission)
+    .patch(requireAuth, requirePermission)
+    .delete(requireAuth, requirePermission)
 
 
 export default router;
