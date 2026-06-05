@@ -19,12 +19,13 @@ import {
 
 // Workflow routes
 import {
-  approveDocument,
+  approveDocumentWorkflow,
+  rejectDocumentWorkflow,
   assignReviewer,
   getWorkflowStatus,
-  reassignReviewer,
-  rejectDocument,
-  submitDocument,
+  submitDocumentWorkflow,
+  getWorkflowsAssignedToMe,
+  cancelDocumentWorkflow,
 } from '@/modules/workflow/workflow.controller';
 import {
   addDocumentMetadata,
@@ -224,28 +225,77 @@ router.route('/search').get(requireAuth, requirePermission, searchDocuments);
 // Document workflow routes
 
 router
-  .route('/:id/submit')
-  .post(requireAuth, requirePermission, submitDocument);
+  .route('/:documentId/workflow/submit')
+  .post(
+    requireAuth,
+    requirePermission({
+      resource: RESOURCES.WORKFLOW,
+      action: ACTIONS.SUBMIT,
+      scope: SCOPES.ALL
+    }),
+    submitDocumentWorkflow
+  );
 
 router
-  .route('/:id/approve')
-  .post(requireAuth, requirePermission, approveDocument);
+  .route('/:documentId/workflow/approve')
+  .post(
+    requireAuth,
+    requirePermission({
+      resource: RESOURCES.WORKFLOW,
+      action: ACTIONS.APPROVE,
+      scope: SCOPES.ALL
+    }),
+    approveDocumentWorkflow
+  );
 
 router
-  .route('/:id/reject')
-  .post(requireAuth, requirePermission, rejectDocument);
+  .route('/:documentId/workflow/reject')
+  .post(
+    requireAuth,
+    requirePermission({
+      resource: RESOURCES.WORKFLOW,
+      action: ACTIONS.REJECT,
+      scope: SCOPES.ALL
+    }),
+    rejectDocumentWorkflow
+  );
 
 router
-  .route('/:id/assign-reviewer')
-  .post(requireAuth, requirePermission, assignReviewer);
+  .route('/:documentId/workflow/assign-reviewer')
+  .post(
+    requireAuth,
+    requirePermission({
+      resource: RESOURCES.WORKFLOW,
+      action: ACTIONS.ASSIGN,
+      scope: SCOPES.ALL
+    }),
+    assignReviewer
+  );
 
 router
-  .route('/:id/reassign-reviewer')
-  .post(requireAuth, requirePermission, reassignReviewer);
+  .route('/:documentId/workflow/cancel')
+  .post(
+    requireAuth,
+    requirePermission({
+      resource: RESOURCES.WORKFLOW,
+      action: ACTIONS.CANCEL,
+      scope: SCOPES.ALL
+    }),
+    cancelDocumentWorkflow
+  );
 
 router
-  .route('/:id/workflow-status')
-  .get(requireAuth, requirePermission, getWorkflowStatus);
+  .route('/:documentId/workflow-status')
+  .get(
+    requireAuth,
+    requirePermission({
+      resource: RESOURCES.WORKFLOW,
+      action: ACTIONS.READ,
+      scope: SCOPES.ALL
+    }),
+    getWorkflowStatus
+  );
+
 
 // Document metadata routes
 router
