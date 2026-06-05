@@ -110,7 +110,7 @@ const permissions = [
   { resource: 'documentMetadata', action: 'update', scope: 'own' },
   { resource: 'documentMetadata', action: 'update', scope: 'all' },
   { resource: 'documentMetadata', action: 'delete', scope: 'all' },
-  
+
   { resource: 'documentShare', action: 'create', scope: 'all' },
   { resource: 'documentShare', action: 'read', scope: 'all' },
   { resource: 'documentShare', action: 'update', scope: 'all' },
@@ -118,6 +118,32 @@ const permissions = [
 
   // Workflow / Comments / Audit / Reports
   { resource: 'workflow', action: 'assign', scope: 'department' },
+
+  // Workflow
+  { resource: 'workflow', action: 'submit', scope: 'own' },
+  { resource: 'workflow', action: 'submit', scope: 'department' },
+  { resource: 'workflow', action: 'submit', scope: 'all' },
+
+  { resource: 'workflow', action: 'assign', scope: 'department' },
+  { resource: 'workflow', action: 'assign', scope: 'all' },
+
+  { resource: 'workflow', action: 'approve', scope: 'assigned' },
+  { resource: 'workflow', action: 'approve', scope: 'department' },
+  { resource: 'workflow', action: 'approve', scope: 'all' },
+
+  { resource: 'workflow', action: 'reject', scope: 'assigned' },
+  { resource: 'workflow', action: 'reject', scope: 'department' },
+  { resource: 'workflow', action: 'reject', scope: 'all' },
+
+  { resource: 'workflow', action: 'read', scope: 'own' },
+  { resource: 'workflow', action: 'read', scope: 'assigned' },
+  { resource: 'workflow', action: 'read', scope: 'department' },
+  { resource: 'workflow', action: 'read', scope: 'all' },
+
+  { resource: 'workflow', action: 'cancel', scope: 'own' },
+  { resource: 'workflow', action: 'cancel', scope: 'department' },
+  { resource: 'workflow', action: 'cancel', scope: 'all' },
+
   { resource: 'comment', action: 'create', scope: 'assigned' },
   { resource: 'auditLog', action: 'read', scope: 'all' },
   { resource: 'report', action: 'generate', scope: 'all' },
@@ -222,6 +248,30 @@ const rolePermissions: Record<string, string[]> = {
     'documentShare:delete:department',
     'documentShare:delete:all',
 
+    'workflow:submit:own',
+    'workflow:submit:department',
+    'workflow:submit:all',
+
+    'workflow:assign:department',
+    'workflow:assign:all',
+
+    'workflow:approve:assigned',
+    'workflow:approve:department',
+    'workflow:approve:all',
+
+    'workflow:reject:assigned',
+    'workflow:reject:department',
+    'workflow:reject:all',
+
+    'workflow:read:own',
+    'workflow:read:assigned',
+    'workflow:read:department',
+    'workflow:read:all',
+
+    'workflow:cancel:own',
+    'workflow:cancel:department',
+    'workflow:cancel:all',
+
     'notification:read:own',
   ],
 
@@ -246,6 +296,10 @@ const rolePermissions: Record<string, string[]> = {
     'documentShare:create:own',
     'documentShare:read:shared',
     'documentShare:delete:own',
+
+    'workflow:submit:own',
+    'workflow:read:own',
+    'workflow:cancel:own',
 
     'notification:read:own',
   ],
@@ -287,7 +341,23 @@ const rolePermissions: Record<string, string[]> = {
     'documentShare:delete:own',
     'documentShare:delete:department',
 
+    'workflow:submit:own',
+    'workflow:submit:department',
+
     'workflow:assign:department',
+
+    'workflow:read:own',
+    'workflow:read:assigned',
+    'workflow:read:department',
+
+    'workflow:approve:assigned',
+    'workflow:approve:department',
+
+    'workflow:reject:assigned',
+    'workflow:reject:department',
+
+    'workflow:cancel:own',
+    'workflow:cancel:department',
     'notification:read:own',
   ],
 
@@ -299,6 +369,9 @@ const rolePermissions: Record<string, string[]> = {
     'comment:create:assigned',
     'notification:read:own',
     'documentShare:read:shared',
+    'workflow:read:assigned',
+    'workflow:approve:assigned',
+    'workflow:reject:assigned',
   ],
 
   Auditor: [
@@ -307,6 +380,7 @@ const rolePermissions: Record<string, string[]> = {
     'auditLog:read:all',
     'report:generate:all',
     'documentShare:read:all',
+    'workflow:read:all',
   ],
 
   'External User': ['document:read:shared', 'document:download:shared'],

@@ -28,6 +28,14 @@ model User {
   documentsSharedWithMe DocumentShare[] @relation("DocumentSharedWithUser")
   documentsSharedByMe   DocumentShare[] @relation("DocumentSharedByUser")
 
+  submittedWorkflows       DocumentWorkflow[] @relation("WorkflowSubmittedBy")
+  assignedReviewWorkflows  DocumentWorkflow[] @relation("WorkflowReviewer")
+  assignedByWorkflows      DocumentWorkflow[] @relation("WorkflowAssignedBy")
+  cancelledWorkflows       DocumentWorkflow[] @relation("WorkflowCancelledBy")
+
+  workflowActions          WorkflowHistory[]  @relation("WorkflowHistoryPerformedBy")
+  workflowReviewActions    WorkflowHistory[]  @relation("WorkflowHistoryReviewer")
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
@@ -149,6 +157,9 @@ model Document {
   metadata      DocumentMetadata[]
   shares        DocumentShare[]
 
+  workflow        DocumentWorkflow?
+  workflowHistory WorkflowHistory[]
+
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -244,5 +255,93 @@ model DocumentShare {
   @@index([permission])
   @@index([isRevoked])
   @@index([expiresAt])
+}
+
+enum WorkflowStatus {
+  PENDING_REVIEW
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum WorkflowAction {
+  SUBMITTED
+  REVIEWER_ASSIGNED
+  REVIEWER_REASSIGNED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model DocumentWorkflow {
+  id                  Int            @id @default(autoincrement())
+
+  document_id          Int            @unique
+
+  status              WorkflowStatus @default(PENDING_REVIEW)
+
+  submittedById        Int
+  submittedAt          DateTime       @default(now())
+
+  reviewerId           Int?
+  assignedById         Int?
+  assignedAt           DateTime?
+
+  reviewedAt           DateTime?
+  reviewComment        String?
+
+  completedAt          DateTime?
+  cancelledAt          DateTime?
+  cancelledById        Int?
+  cancelReason         String?
+
+  document             Document       @relation(fields: [document_id], references: [id])
+
+  submittedBy          User           @relation("WorkflowSubmittedBy", fields: [submittedById], references: [id])
+  reviewer             User?          @relation("WorkflowReviewer", fields: [reviewerId], references: [id])
+  assignedBy           User?          @relation("WorkflowAssignedBy", fields: [assignedById], references: [id])
+  cancelledBy          User?          @relation("WorkflowCancelledBy", fields: [cancelledById], references: [id])
+
+  history              WorkflowHistory[]
+
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  @@index([document_id])
+  @@index([status])
+  @@index([submittedById])
+  @@index([reviewerId])
+  @@index([assignedById])
+}
+
+model WorkflowHistory {
+  id              Int             @id @default(autoincrement())
+
+  workflow_id     Int
+  document_id     Int
+
+  action          WorkflowAction
+  fromStatus      WorkflowStatus?
+  toStatus        WorkflowStatus?
+
+  performedById   Int
+
+  reviewerId      Int?
+  comment         String?
+
+  workflow        DocumentWorkflow @relation(fields: [workflow_id], references: [id])
+  document        Document         @relation(fields: [document_id], references: [id])
+  performedBy     User             @relation("WorkflowHistoryPerformedBy", fields: [performedById], references: [id])
+  reviewer        User?            @relation("WorkflowHistoryReviewer", fields: [reviewerId], references: [id])
+
+  createdAt       DateTime         @default(now())
+
+  @@index([workflow_id])
+  @@index([document_id])
+  @@index([performedById])
+  @@index([reviewerId])
+  @@index([action])
+  @@index([createdAt])
 }
 
