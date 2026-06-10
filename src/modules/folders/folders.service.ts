@@ -5,7 +5,9 @@ import ApiError from "../../utils/ApiError";
 export const getFoldersService = async (
     { departmentId, parentId }: GetFoldersFilter = {},
 ) => {
-    const where: any = {};
+    const where: any = {
+        isDeleted: false,
+    };
 
     if (departmentId !== undefined) {
         where.dept_id = departmentId;
@@ -55,6 +57,7 @@ export const createFolderService = async (folder: FolderData, userId?: number) =
         where: {
             name: folder.name,
             parent_id: folder.parent_id ?? null,
+            isDeleted: false,
         },
     });
 
@@ -108,6 +111,7 @@ export const updateFolderService = async (
             where: {
                 name: folder.name,
                 parent_id: existingFolder.parent_id,
+                isDeleted: false,
                 NOT: {
                     id: folderId,
                 },
@@ -127,54 +131,57 @@ export const updateFolderService = async (
     });
 };
 
-export const deleteFolderService = async (folderId: number) => {
-    if (!folderId || Number.isNaN(folderId)) {
-        throw new ApiError(400, 'Valid folder ID is required.');
-    }
+export const deleteFolderService = async (folderId: number, userId: number) => {
+  if (!folderId || Number.isNaN(folderId)) {
+    throw new ApiError(400, 'Valid folder ID is required.');
+  }
 
-    const folder = await prisma.folder.findUnique({
-        where: {
-            id: folderId,
-        },
-    });
+  const folder = await prisma.folder.findUnique({
+    where: { id: folderId },
+  });
 
-    if (!folder) {
-        throw new ApiError(404, 'Folder not found.');
-    }
+  if (!folder) {
+    throw new ApiError(404, 'Folder not found.');
+  }
 
-    const childFolderCount = await prisma.folder.count({
-        where: {
-            parent_id: folderId,
-        },
-    });
+  const childFolderCount = await prisma.folder.count({
+    where: {
+      parent_id: folderId,
+      isDeleted: false,
+    },
+  });
 
-    if (childFolderCount > 0) {
-        throw new ApiError(
-            409,
-            'Folder cannot be deleted because it contains subfolders.',
-        );
-    }
+  if (childFolderCount > 0) {
+    throw new ApiError(
+      409,
+      'Folder cannot be deleted because it contains active subfolders.',
+    );
+  }
 
-    const documentCount = await prisma.document.count({
-        where: {
-            folder_id: folderId,
-        },
-    });
+  const activeDocumentCount = await prisma.document.count({
+    where: {
+      folder_id: folderId,
+      isDeleted: false,
+    },
+  });
 
-    if (documentCount > 0) {
-        throw new ApiError(
-            409,
-            'Folder cannot be deleted because it contains documents.',
-        );
-    }
+  if (activeDocumentCount > 0) {
+    throw new ApiError(
+      409,
+      'Folder cannot be deleted because it contains active documents.',
+    );
+  }
 
-    const deletedFolder = await prisma.folder.delete({
-        where: {
-            id: folderId,
-        },
-    });
+  const deletedFolder = await prisma.folder.update({
+    where: { id: folderId },
+    data: {
+      isDeleted: true,
+      deletedAt: new Date(),
+      deletedBy: userId,
+    },
+  });
 
-    return deletedFolder;
+  return deletedFolder;
 };
 
 export const moveFolderService = async (

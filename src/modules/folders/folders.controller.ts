@@ -112,7 +112,8 @@ export const updateFolder = asyncHandler(async (req: Request, res: Response) => 
  */
 export const deleteFolder = asyncHandler(async (req: Request, res: Response) => {
     const folderId = Number(req.params.id)
-    const deletedFolder = await deleteFolderService(folderId);
+    const userId = Number(req.user?.id);
+    const deletedFolder = await deleteFolderService(folderId, userId);
     res.status(200)
         .json(
             new ApiResponse(
