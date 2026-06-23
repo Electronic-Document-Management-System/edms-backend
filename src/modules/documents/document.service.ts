@@ -1,11 +1,11 @@
-import { prisma } from '../../config/db.config';
+import { prisma } from '@/config/db.config';
 import {
   getFileFromMinIO,
   uploadFileToMinIO,
-} from '../../services/storage/minio.service';
-import { uploadDocData } from '../../types/document';
-import ApiError from '../../utils/ApiError';
-import { generateDocumentObjectKey } from '../../utils/doc.utils';
+} from '@/services/storage/minio.service';
+import { uploadDocData } from '@/types/document';
+import ApiError from '@/utils/ApiError';
+import { generateDocumentObjectKey } from '@/utils/doc.utils';
 
 export const getAllDocumentsService = async ({
   departmentId,
@@ -361,20 +361,48 @@ export const restoreDocumentService = async (documentId: number) => {
 export const searchDocumentsService = async () => {};
 
 export const downloadDocumentService = async (documentId: number) => {
+  if (!documentId || Number.isNaN(documentId)) {
+    throw new ApiError(400, 'Valid document ID is required.');
+  }
+
   const document = await prisma.document.findUnique({
-    where: { id: documentId },
+    where: {
+      id: documentId,
+    },
   });
 
   if (!document) {
     throw new ApiError(404, 'Document not found.');
   }
 
-  const fileStream = await getFileFromMinIO(document.objectKey);
+  if (document.isDeleted) {
+    throw new ApiError(400, 'Deleted document cannot be downloaded.');
+  }
 
-  return {
-    document,
-    fileStream,
-  };
+  if (!document.objectKey) {
+    throw new ApiError(500, 'Document storage key is missing.');
+  }
+
+  try {
+    const fileStream = await getFileFromMinIO(document.objectKey);
+
+    return {
+      document,
+      fileStream,
+    };
+  } catch (error) {
+    console.error('MinIO download error:', {
+      documentId: document.id,
+      objectKey: document.objectKey,
+      bucketName: document.bucketName,
+      error,
+    });
+
+    throw new ApiError(
+      500,
+      'Failed to download document file from storage.',
+    );
+  }
 };
 
 export const archiveDocumentService = async (
