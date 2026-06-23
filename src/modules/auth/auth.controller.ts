@@ -1,14 +1,19 @@
 import { Request, Response } from 'express';
 
-import { ApiResponse } from '../../utils/ApiResponse';
-import asyncHandler from '../../utils/asyncHandler';
+import { ApiResponse } from '@/utils/ApiResponse';
+import asyncHandler from '@/utils/asyncHandler';
 
 import * as authService from './auth.service';
 
+/**
+ * @description Authenticates a user using email and password, then returns access and refresh tokens.
+ * @route POST /api/auth/login
+ * @access Public
+ */
 const login = asyncHandler(async (req: Request, res: Response) => {
   const result = await authService.loginService(req.body);
 
-  const { user, accesstoken, refreshToken } = result;
+  const { user, accessToken, refreshToken } = result;
 
   const options = {
     httpOnly: true,
@@ -17,9 +22,78 @@ const login = asyncHandler(async (req: Request, res: Response) => {
 
   return res
     .status(200)
-    .cookie('accesstoken', accesstoken, options)
-    .cookie('refreshToken', refreshToken, options)
-    .json(new ApiResponse(200, user, 'Login Successful'));
+    .cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000,
+    })
+    .cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 10000,
+    })
+    .json(
+      new ApiResponse(
+        200,
+        { user, accessToken, refreshToken },
+        'Login Successful',
+      ),
+    );
 });
 
-export { login };
+/**
+ * @description Logs out a user by clearing access and refresh tokens.
+ * @route POST /api/auth/logout
+ * @access Public
+ */
+const logout = asyncHandler(async (req: Request, res: Response) => {
+  const options = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+  };
+
+  return res
+    .status(200)
+    .clearCookie('accessToken', options)
+    .clearCookie('refreshToken', options)
+    .json(
+      new ApiResponse(
+        200,
+        {},
+        'Logout successful'
+      ));
+});
+
+/**
+ * @description Refreshes an access token using a refresh token.
+ * @route POST /api/auth/refresh-token
+ * @access Public
+ */
+const refreshAccessToken = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { refreshToken } = req.cookies;
+
+    const { accessToken } = await authService.refreshAccessTokenService(refreshToken);
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 15 * 60 * 1000,
+      })
+      .json(
+        new ApiResponse(
+          200,
+          { accessToken },
+          "Access token refreshed successfully"
+        )
+      );
+  }
+);
+
+export { login, logout, refreshAccessToken };
