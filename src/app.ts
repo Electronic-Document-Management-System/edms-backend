@@ -3,6 +3,7 @@ import express, { Router } from 'express';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 
 const router = Router();
 const app = express();
@@ -26,6 +27,7 @@ app.use(
     credentials: true,
   }),
 );
+app.use(cookieParser());
 app.use(express.static('public'));
 app.use(helmet());
 
@@ -64,7 +66,7 @@ import { errorHandler } from './middlewares/error.middleware';
 app.use(router);
 app.use('/api/v1/tenant/auth', authRouter);
 app.use('/api/v1/tenant/rbac', rbacRouter);
-app.use('/api/v1/tanent/users', usersRouter);
+app.use('/api/v1/tenant/users', usersRouter);
 app.use('/api/v1/tenant/audit', auditRouter);
 app.use('/api/v1/tenant/departments', departmentRouter);
 app.use('/api/v1/tenant/document', documentRouter);
