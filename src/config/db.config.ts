@@ -21,7 +21,21 @@ export const prisma = prismaClient.$extends({
       async findAndVerify(email: string, password: string) {
         const user = await prismaClient.user.findUnique({
           where: { email },
-          include: { roles: { include: { role: true } } },
+          include: {
+            roles: {
+              include: {
+                role: {
+                  include: {
+                    rolePermissions: {
+                      include: {
+                        permission: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         });
 
         if (!user) return null;

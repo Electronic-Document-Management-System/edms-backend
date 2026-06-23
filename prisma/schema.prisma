@@ -50,8 +50,8 @@ model Role {
 model UserRole {
   user_id Int
   role_id Int
-  user    User @relation(fields: [user_id], references: [id])
-  role    Role @relation(fields: [role_id], references: [id])
+  user    User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role    Role @relation(fields: [role_id], references: [id], onDelete: Cascade)
 
   assigned_by Int?
   assigned_at DateTime @default(now())
@@ -72,8 +72,8 @@ model Permission {
 model RolePermission {
   role_id       Int
   permission_id Int
-  role          Role       @relation(fields: [role_id], references: [id])
-  permission    Permission @relation(fields: [permission_id], references: [id])
+  role          Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  permission    Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
 
   @@id([role_id, permission_id])
 }

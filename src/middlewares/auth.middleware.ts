@@ -20,12 +20,10 @@ interface AccessTokenPayload extends JwtPayload {
 
 export const requireAuth = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    const authHeader = req.headers.authorization;
 
     const token =
-      authHeader && authHeader.startsWith('Bearer ')
-        ? authHeader.split(' ')[1]
-        : undefined;
+      req.cookies?.accessToken ||
+      req.headers.authorization?.replace("Bearer ", "");
 
     if (!token) {
       throw new ApiError(401, 'Unauthorized request.');
