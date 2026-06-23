@@ -1,11 +1,22 @@
 import { Readable } from 'stream';
-import { minioClient, MINIO_BUCKET_NAME } from '../../config/minio.config';
+import {
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+  HeadBucketCommand,
+  CreateBucketCommand,
+} from '@aws-sdk/client-s3';
+import { s3Client, BUCKET_NAME } from '@/config/minio.config';
 
 export const ensureBucketExists = async () => {
-  const exists = await minioClient.bucketExists(MINIO_BUCKET_NAME);
-
-  if (!exists) {
-    await minioClient.makeBucket(MINIO_BUCKET_NAME);
+  try {
+    await s3Client.send(new HeadBucketCommand({ Bucket: BUCKET_NAME }));
+  } catch (error: any) {
+    if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+      await s3Client.send(new CreateBucketCommand({ Bucket: BUCKET_NAME }));
+    } else {
+      throw error;
+    }
   }
 };
 
@@ -15,19 +26,20 @@ export const uploadFileToMinIO = async (
 ) => {
   await ensureBucketExists();
 
-  await minioClient.putObject(
-    MINIO_BUCKET_NAME,
-    objectKey,
-    file.buffer,
-    file.size,
-    {
-      'Content-Type': file.mimetype,
-      'Original-Name': file.originalname,
-    },
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: objectKey,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+      Metadata: {
+        'original-name': file.originalname,
+      },
+    }),
   );
 
   return {
-    bucketName: MINIO_BUCKET_NAME,
+    bucketName: BUCKET_NAME,
     objectKey,
     originalName: file.originalname,
     mimeType: file.mimetype,
@@ -36,9 +48,14 @@ export const uploadFileToMinIO = async (
 };
 
 export const getFileFromMinIO = async (objectKey: string): Promise<Readable> => {
-  return await minioClient.getObject(MINIO_BUCKET_NAME, objectKey);
+  const response = await s3Client.send(
+    new GetObjectCommand({ Bucket: BUCKET_NAME, Key: objectKey }),
+  );
+  return response.Body as Readable;
 };
 
 export const deleteFileFromMinIO = async (objectKey: string) => {
-  await minioClient.removeObject(MINIO_BUCKET_NAME, objectKey);
+  await s3Client.send(
+    new DeleteObjectCommand({ Bucket: BUCKET_NAME, Key: objectKey }),
+  );
 };
