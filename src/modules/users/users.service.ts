@@ -1,5 +1,5 @@
 import { prisma } from "../../config/db.config"
-import { newUserDataType, safeUserSelect, updateUserDataType } from "../../types/users.d";
+import { newUserDataType, safeUserSelect, updateUserDataType } from "../../types/users";
 import ApiError from "../../utils/ApiError"
 import { hashPassword } from "../auth/auth.utils";
 
@@ -123,7 +123,18 @@ export const updateUserByIdService = async (
             id: userId,
         },
         data: userData,
-        select: safeUserSelect,
+        select: {
+            ...safeUserSelect,
+            roles: {
+                select: {
+                    user_id: true,
+                    role_id: true,
+                    assigned_by: true,
+                    assigned_at: true,
+                    role: true,
+                },
+            },
+        },
     });
 
     return updatedUser;

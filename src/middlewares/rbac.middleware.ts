@@ -3,6 +3,7 @@ import asyncHandler from '../utils/asyncHandler';
 import ApiError from '../utils/ApiError';
 import { prisma } from '../config/db.config';
 import { PermissionInput, UserWithPermissions } from '../types/rbac.d';
+import logger from '@/logger/winston.logger';
 
 const buildPermissionKey = (permission: PermissionInput): string => {
   return `${permission.resource}:${permission.action}:${permission.scope}`;
@@ -54,7 +55,8 @@ export const requirePermission = (requiredPermission: PermissionInput) =>
 
     const userPermissionKeys = await getUserPermissionKeys(req.user.id);
     const requiredPermissionKey = buildPermissionKey(requiredPermission);
-
+    // logger.error('Required:', requiredPermissionKey);
+    // logger.error('User has:', userPermissionKeys);
     const hasPermission = userPermissionKeys.includes(requiredPermissionKey);
 
     if (!hasPermission) {
