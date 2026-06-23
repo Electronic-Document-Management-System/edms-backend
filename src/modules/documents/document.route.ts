@@ -50,8 +50,8 @@ import {
   restoreDocumentVersion,
 } from '@/modules/document_versions/documentVersions.controller';
 import {
-  uploadMultipleDocumentFiles,
-  uploadSingleDocumentFile,
+  uploadMultipleDocuments,
+  uploadSingleDocument,
 } from '@/middlewares/upload.middleware';
 import { ACTIONS, RESOURCES, SCOPES } from '@/constants';
 
@@ -119,9 +119,9 @@ router
     requirePermission({
       resource: RESOURCES.DOCUMENT,
       action: ACTIONS.UPLOAD,
-      scope: SCOPES.ALL,
+      scope: SCOPES.OWN,
     }),
-    uploadSingleDocumentFile.single('file'),
+    uploadSingleDocument,
     uploadDocument,
   );
 
@@ -132,7 +132,7 @@ router.route('/bulk-upload').post(
     action: ACTIONS.UPLOAD,
     scope: SCOPES.ALL,
   }),
-  uploadMultipleDocumentFiles.array('files', 10),
+  uploadMultipleDocuments,
   uploadBulkDocuments,
 );
 
@@ -140,11 +140,15 @@ router
   .route('/:id')
   .get(
     requireAuth,
-    requirePermission({
+    requireAnyPermission([{
+      resource: RESOURCES.DOCUMENT,
+      action: ACTIONS.READ,
+      scope: SCOPES.ASSIGNED
+    }, {
       resource: RESOURCES.DOCUMENT,
       action: ACTIONS.READ,
       scope: SCOPES.ALL,
-    }),
+    }]),
     getDocumentById,
   )
   .patch(
@@ -243,7 +247,7 @@ router
     requirePermission({
       resource: RESOURCES.WORKFLOW,
       action: ACTIONS.APPROVE,
-      scope: SCOPES.ALL
+      scope: SCOPES.ASSIGNED
     }),
     approveDocumentWorkflow
   );
@@ -255,7 +259,7 @@ router
     requirePermission({
       resource: RESOURCES.WORKFLOW,
       action: ACTIONS.REJECT,
-      scope: SCOPES.ALL
+      scope: SCOPES.ASSIGNED
     }),
     rejectDocumentWorkflow
   );

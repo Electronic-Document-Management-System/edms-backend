@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { ApiResponse } from "../../utils/ApiResponse";
-import asyncHandler from "../../utils/asyncHandler";
+import { ApiResponse } from "@/utils/ApiResponse";
+import asyncHandler from "@/utils/asyncHandler";
 import {
     archiveDocumentService,
     downloadDocumentService,
@@ -13,7 +13,7 @@ import {
     uploadBulkDocumentsService,
     uploadSingleDocumentService
 } from "./document.service";
-import ApiError from "../../utils/ApiError";
+import ApiError from "@/utils/ApiError";
 
 /**
  * @description Retrieves all documents from PostgreSQL.
@@ -246,21 +246,42 @@ export const archiveDocument = asyncHandler(async (req: Request, res: Response) 
  * @route GET /api/documents/:id/download
  * @access Private
  */
-export const downloadDocument = asyncHandler(async (req: Request, res: Response) => {
-
+export const downloadDocument = asyncHandler(
+  async (req: Request, res: Response) => {
     const documentId = Number(req.params.id);
-    const {fileStream, document} = await downloadDocumentService(documentId);
 
-    res
-        .status(200)
-        .setHeader('Content-Type', document.mimeType)
-        .setHeader(
-            'Content-Disposition',
-            `attachment; filename="${document.originalName}"`,
+    if (Number.isNaN(documentId)) {
+      throw new ApiError(400, 'Invalid document ID.');
+    }
+
+    const { document, fileStream } = await downloadDocumentService(documentId);
+
+    res.setHeader(
+      'Content-Type',
+      document.mimeType || 'application/octet-stream',
     );
 
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${encodeURIComponent(document.originalName)}"`,
+    );
+
+    fileStream.on('error', (error) => {
+      console.error('File stream error:', error);
+
+      if (!res.headersSent) {
+        res.status(500).json({
+          statusCode: 500,
+          message: 'File stream failed.',
+          success: false,
+          errors: [],
+        });
+      }
+    });
+
     fileStream.pipe(res);
-});
+  },
+);
 
 /**
  * @description Restores a document in PostgreSQL.
