@@ -1,23 +1,21 @@
-import { Client } from 'minio';
+import { S3Client } from '@aws-sdk/client-s3';
 import ApiError from '../utils/ApiError';
 
-const endpoint = process.env.MINIO_ENDPOINT;
-const port = Number(process.env.MINIO_PORT);
-const useSSL = process.env.MINIO_USE_SSL === 'true';
-const accessKey = process.env.MINIO_ACCESS_KEY;
-const secretKey = process.env.MINIO_SECRET_KEY;
+const endpoint = process.env.S3_ENDPOINT;
+const accessKeyId = process.env.S3_ACCESS_KEY_ID;
+const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY;
 
-if (!endpoint || !port || !accessKey || !secretKey) {
-  throw new ApiError(500, 'MinIO configuration is missing in environment variables.');
+if (!endpoint || !accessKeyId || !secretAccessKey) {
+  throw new ApiError(500, 'S3/R2 configuration is missing in environment variables.');
 }
 
-export const minioClient = new Client({
-  endPoint: endpoint,
-  port,
-  useSSL,
-  accessKey,
-  secretKey,
+export const s3Client = new S3Client({
+  region: 'auto',
+  endpoint,
+  credentials: {
+    accessKeyId,
+    secretAccessKey,
+  },
 });
 
-export const MINIO_BUCKET_NAME =
-  process.env.MINIO_BUCKET_NAME || 'edms-documents';
+export const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'edms-bucket';
