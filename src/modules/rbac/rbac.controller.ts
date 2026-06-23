@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { ApiResponse } from '../../utils/ApiResponse';
-import asyncHandler from '../../utils/asyncHandler';
-import ApiError from '../../utils/ApiError';
+import { ApiResponse } from '@/utils/ApiResponse';
+import asyncHandler from '@/utils/asyncHandler';
+import ApiError from '@/utils/ApiError';
 import {
   addPermissionToRoleService,
   createPermissionService,
@@ -11,6 +11,7 @@ import {
   getAllPermissionsService,
   getAllRolesService,
   getRoleByIdService,
+  getRoleImpactService,
   getRolePermissionsService,
   getUserRolesService,
   removePermissionFromRoleService,
@@ -37,7 +38,7 @@ export const getAllRoles = asyncHandler(async (_req: Request, res: Response) => 
  * @access Private
  */
 export const getRoleById = asyncHandler(async (req: Request, res: Response) => {
-  const roleId = Number(req.params.id);
+  const roleId = Number(req.params.roleId);
 
   if (Number.isNaN(roleId)) {
     throw new ApiError(400, 'Invalid role id.');
@@ -57,7 +58,7 @@ export const getRoleById = asyncHandler(async (req: Request, res: Response) => {
  */
 export const getRolePermissions = asyncHandler(
   async (req: Request, res: Response) => {
-    const roleId = Number(req.params.id);
+    const roleId = Number(req.params.roleId);
 
     if (Number.isNaN(roleId)) {
       throw new ApiError(400, 'Invalid role id.');
@@ -105,9 +106,9 @@ export const getAllPermissions = asyncHandler(
  */
 export const getUserRoles = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = Number(req.params.id);
-
-    if (Number.isNaN(userId)) {
+    const userId = Number(req.params.userId);
+    // logger.info(userId);
+    if (isNaN(userId)) {
       throw new ApiError(400, 'Invalid user id.');
     }
 
@@ -146,7 +147,7 @@ export const createRole = asyncHandler(async (req: Request, res: Response) => {
  * @access Private
  */
 export const updateRole = asyncHandler(async (req: Request, res: Response) => {
-  const roleId = Number(req.params.id);
+  const roleId = Number(req.params.roleId);
 
   if (Number.isNaN(roleId)) {
     throw new ApiError(400, 'Invalid role id.');
@@ -167,7 +168,7 @@ export const updateRole = asyncHandler(async (req: Request, res: Response) => {
  * @access Private
  */
 export const deleteRole = asyncHandler(async (req: Request, res: Response) => {
-  const roleId = Number(req.params.id);
+  const roleId = Number(req.params.roleId);
 
   if (Number.isNaN(roleId)) {
     throw new ApiError(400, 'Invalid role id.');
@@ -178,6 +179,31 @@ export const deleteRole = asyncHandler(async (req: Request, res: Response) => {
   return res
     .status(200)
     .json(new ApiResponse(200, { role: deletedRole }, 'Role deleted successfully'));
+});
+
+/**
+ * @description
+ * @route GET  api/v1/rbac/roles/:roleId/impact
+ * @access Private
+ */
+
+export const getRoleImpact = asyncHandler(async (req: Request, res: Response) => {
+  const roleId = Number(req.params.roleId);
+
+  if (Number.isNaN(roleId)) {
+    throw new ApiError(400, 'Invalid role id.');
+  }
+
+  const roleImpact = await getRoleImpactService(roleId);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { roleImpact },
+        'Role impact retrieved successfully'
+      ));
 });
 
 /**
@@ -210,7 +236,7 @@ export const createPermission = asyncHandler(
  */
 export const updatePermission = asyncHandler(
   async (req: Request, res: Response) => {
-    const permissionId = Number(req.params.id);
+    const permissionId = Number(req.params.permissionId);
 
     if (Number.isNaN(permissionId)) {
       throw new ApiError(400, 'Invalid permission id.');
@@ -242,7 +268,7 @@ export const updatePermission = asyncHandler(
  */
 export const deletePermission = asyncHandler(
   async (req: Request, res: Response) => {
-    const permissionId = Number(req.params.id);
+    const permissionId = Number(req.params.permissionId);
 
     if (Number.isNaN(permissionId)) {
       throw new ApiError(400, 'Invalid permission id.');
@@ -269,7 +295,7 @@ export const deletePermission = asyncHandler(
  */
 export const addPermissionToRole = asyncHandler(
   async (req: Request, res: Response) => {
-    const roleId = Number(req.params.id);
+    const roleId = Number(req.params.roleId);
     const permissionId = Number(req.body.permissionId);
 
     if (Number.isNaN(roleId)) {
@@ -304,7 +330,7 @@ export const addPermissionToRole = asyncHandler(
  */
 export const removePermissionFromRole = asyncHandler(
   async (req: Request, res: Response) => {
-    const roleId = Number(req.params.id);
+    const roleId = Number(req.params.roleId);
     const permissionId = Number(req.params.permissionId);
 
     if (Number.isNaN(roleId)) {

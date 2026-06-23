@@ -1,6 +1,6 @@
-import { prisma } from '../../config/db.config';
-import { PermissionData, RoleData } from '../../types/rbac.d';
-import ApiError from '../../utils/ApiError';
+import { prisma } from '@/config/db.config';
+import { PermissionData, RoleData } from '@/types/rbac.d';
+import ApiError from '@/utils/ApiError';
 
 export const getAllRolesService = async () => {
   return await prisma.role.findMany({
@@ -58,9 +58,20 @@ export const getUserRolesService = async (userId: number) => {
     where: {
       id: userId,
     },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      dept_id: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
       roles: {
-        include: {
+        select: {
+          user_id: true,
+          role_id: true,
+          assigned_by: true,
+          assigned_at: true,
           role: true,
         },
       },
@@ -144,6 +155,26 @@ export const deleteRoleService = async (roleId: number) => {
     },
   });
 };
+
+export const getRoleImpactService = async (roleId: number) => {
+  const [users, permissions] = await Promise.all([
+    prisma.userRole.count({
+      where: {
+        role_id: roleId,
+      },
+    }),
+    prisma.rolePermission.count({
+      where: {
+        role_id: roleId,
+      },
+    }),
+  ]);
+
+  return {
+    users,
+    permissions,
+  };
+}
 
 export const createPermissionService = async (
   permissionData: PermissionData,
