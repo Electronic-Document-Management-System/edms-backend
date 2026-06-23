@@ -171,8 +171,8 @@ export const assignReviewerService = async (
         where: { document_id: documentId },
         data: {
             status: WorkflowStatus.IN_REVIEW,
-            reviewerId: reviewer.id,
-            assignedById: assignedById,
+            reviewerId,
+            assignedById,
             assignedAt: new Date(),
         },
     });
@@ -225,8 +225,6 @@ export const approveDocumentWorkflowService = async (
             reviewedAt: new Date(),
             reviewComment: comment,
             completedAt: new Date(),
-            reviewerId: reviewerId,
-
         },
     });
 
@@ -237,7 +235,7 @@ export const approveDocumentWorkflowService = async (
         fromStatus: workflow.status,
         toStatus: WorkflowStatus.APPROVED,
         performedById: reviewerId,
-        reviewerId: reviewerId,
+        reviewerId,
         comment,
     });
 
@@ -334,7 +332,6 @@ export const cancelDocumentWorkflowService = async (
         fromStatus: workflow.status,
         toStatus: WorkflowStatus.CANCELLED,
         performedById: cancelledById,
-        reviewerId: cancelledById,
         comment: reason,
     });
 
@@ -447,58 +444,6 @@ export const getWorkflowsAssignedToMeService = async (reviewerId: number) => {
         },
         orderBy: {
             assignedAt: 'desc',
-        },
-    });
-
-    return workflows;
-};
-
-export const getMyWorkflowSubmissionsService = async (submittedById: number) => {
-    validateId(submittedById, 'Valid user ID is required.');
-
-    const workflows = await prisma.documentWorkflow.findMany({
-        where: {
-            submittedById,
-            document: {
-                isDeleted: false,
-            },
-        },
-        include: {
-            document: {
-                include: {
-                    department: true,
-                    folder: true,
-                    uploadedBy: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                        },
-                    },
-                    metadata: {
-                        include: {
-                            metadataField: true,
-                        },
-                    },
-                },
-            },
-            reviewer: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                },
-            },
-            assignedBy: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                },
-            },
-        },
-        orderBy: {
-            submittedAt: 'desc',
         },
     });
 

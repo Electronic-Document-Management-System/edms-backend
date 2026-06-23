@@ -2,7 +2,7 @@ import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth.middleware";
 import { requireAnyPermission, requirePermission } from "../../middlewares/rbac.middleware";
 import { ACTIONS, RESOURCES, SCOPES } from "@/constants";
-import { getMyWorkflowSubmissions, getWorkflowsAssignedToMe } from "./workflow.controller";
+import { getWorkflowsAssignedToMe } from "./workflow.controller";
 
 /**
 GET    /api/workflows
@@ -43,17 +43,6 @@ router
         getWorkflowsAssignedToMe
     );
 
-router
-    .route('/my-submissions')
-    .get(
-        requireAuth,
-        requirePermission({
-            resource: RESOURCES.WORKFLOW,
-            action: ACTIONS.READ,
-            scope: SCOPES.OWN,
-        }),
-        getMyWorkflowSubmissions
-    );
 
 router
     .route("/")
