@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import asyncHandler from "@/utils/asyncHandler";
 import { ApiResponse } from "@/utils/ApiResponse";
-import { approveDocumentWorkflowService, assignReviewerService, cancelDocumentWorkflowService, getWorkflowsAssignedToMeService, getWorkflowStatusService, rejectDocumentWorkflowService, submitDocumentWorkflowService } from "./workflow.service";
+import { approveDocumentWorkflowService, assignReviewerService, cancelDocumentWorkflowService, getMyWorkflowSubmissionsService, getWorkflowsAssignedToMeService, getWorkflowStatusService, rejectDocumentWorkflowService, submitDocumentWorkflowService } from "./workflow.service";
 
 
 // Document workflow endpoints
@@ -15,14 +15,14 @@ export const submitDocumentWorkflow = asyncHandler(async (req: Request, res: Res
     const documentId = Number(req.params.documentId);
     const userId = Number(req.user?.id);
 
-    const submittedDocument = await submitDocumentWorkflowService(documentId, userId)
+    const workflow = await submitDocumentWorkflowService(documentId, userId)
 
     return res
         .status(200)
         .json(
             new ApiResponse(
                 200,
-                { submittedDocument },
+                { workflow },
                 "Document submitted successfully"
             )
         )
@@ -38,14 +38,14 @@ export const assignReviewer = asyncHandler(async (req: Request, res: Response) =
     const documentId = Number(req.params.documentId);
     const reviewerId = Number(req.body.reviewerId)
     const assignedById = Number(req.user?.id)
-    const assignedReviewer = await assignReviewerService(documentId, reviewerId, assignedById)
+    const workflow = await assignReviewerService(documentId, reviewerId, assignedById)
 
     return res
         .status(200)
         .json(
             new ApiResponse(
                 200,
-                { assignedReviewer },
+                { workflow },
                 "Reviewer assigned successfully"
             )
         )
@@ -61,14 +61,14 @@ export const approveDocumentWorkflow = asyncHandler(async (req: Request, res: Re
     const documentId = Number(req.params.documentId);
     const reviewerId = Number(req.user?.id);
     const comment = req.body.comment;
-    const approvedDocument = await approveDocumentWorkflowService(documentId, reviewerId, comment)
+    const workflow = await approveDocumentWorkflowService(documentId, reviewerId, comment)
 
     return res
         .status(200)
         .json(
             new ApiResponse(
                 200,
-                { approvedDocument },
+                { workflow },
                 "Document approved successfully"
             )
         )
@@ -84,14 +84,14 @@ export const rejectDocumentWorkflow = asyncHandler(async (req: Request, res: Res
     const documentId = Number(req.params.documentId);
     const reviewerId = Number(req.user?.id);
     const comment = req.body.comment;
-    const rejectedDocument = await rejectDocumentWorkflowService(documentId, reviewerId, comment)
+    const workflow = await rejectDocumentWorkflowService(documentId, reviewerId, comment)
 
     return res
         .status(200)
         .json(
             new ApiResponse(
                 200,
-                { rejectedDocument },
+                { workflow },
                 "Document rejected successfully"
             )
         )
@@ -105,14 +105,14 @@ export const rejectDocumentWorkflow = asyncHandler(async (req: Request, res: Res
 export const getWorkflowStatus = asyncHandler(async (req: Request, res: Response) => {
 
     const documentId = Number(req.params.documentId);
-    const workflowStatus = await getWorkflowStatusService(documentId);
+    const workflow = await getWorkflowStatusService(documentId);
 
     return res
         .status(200)
         .json(
             new ApiResponse(
                 200,
-                { workflowStatus },
+                { workflow },
                 "Workflow status retrieved successfully"
             )
         )
@@ -128,14 +128,14 @@ export const cancelDocumentWorkflow = asyncHandler(async (req: Request, res: Res
     const documentId = Number(req.params.documentId);
     const cancelledById = Number(req.user?.id)
     const reason = req.body.reason;
-    const cancelledDocument = await cancelDocumentWorkflowService(documentId, cancelledById, reason)
+    const workflow = await cancelDocumentWorkflowService(documentId, cancelledById, reason)
 
     return res
         .status(200)
         .json(
             new ApiResponse(
                 200,
-                { cancelledDocument },
+                { workflow },
                 "Document cancelled successfully"
             )
         )
@@ -149,15 +149,36 @@ export const cancelDocumentWorkflow = asyncHandler(async (req: Request, res: Res
 export const getWorkflowsAssignedToMe = asyncHandler(async (req: Request, res: Response) => {
 
     const reviewerId = Number(req.user?.id);
-    const workflowsAssignedToMe = await getWorkflowsAssignedToMeService(reviewerId)
+    const workflows = await getWorkflowsAssignedToMeService(reviewerId)
 
     return res
         .status(200)
         .json(
             new ApiResponse(
                 200,
-                { workflowsAssignedToMe },
+                { workflows },
                 "Workflows assigned to me retrieved successfully"
+            )
+        )
+});
+
+/**
+ * @description Get workflows submitted by me
+ * @route GET /api/v1/workflows/my-submissions
+ * @access Private
+ */
+export const getMyWorkflowSubmissions = asyncHandler(async (req: Request, res: Response) => {
+
+    const submittedById = Number(req.user?.id);
+    const workflows = await getMyWorkflowSubmissionsService(submittedById)
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                { workflows },
+                "My workflow submissions retrieved successfully"
             )
         )
 });
