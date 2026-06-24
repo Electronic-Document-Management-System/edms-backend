@@ -44,7 +44,7 @@ export const buildAuthUserPayload = (
   }));
 
   const permissions = [
-    ...new Set(
+    ...new Set<string>(
       user.roles.flatMap((userRole) =>
         userRole.role.rolePermissions.map((rolePermission) => {
           const permission = rolePermission.permission;
