@@ -9,7 +9,8 @@
     "format": "prettier --write 'src/**/*.ts'",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint": "eslint . --ext .ts",
-    "build": "tsc && tsc-alias"
+    "build": "prisma generate && tsc && tsc-alias",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
