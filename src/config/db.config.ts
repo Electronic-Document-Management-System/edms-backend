@@ -52,6 +52,7 @@ export const connectDB = async () => {
     logger.info("🐘 PostgreSQL connected via Prisma");
   } catch (error) {
     logger.error(`❌ Database connection error: ${error}`);
-    process.exit(1);
+    throw error;
+    // process.exit(1);
   }
 };
