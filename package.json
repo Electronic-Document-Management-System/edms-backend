@@ -10,6 +10,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "lint": "eslint . --ext .ts",
     "build": "prisma generate && tsc && tsc-alias",
+    "vercel-build": "prisma generate && tsc && tsc-alias",
     "postinstall": "prisma generate"
   },
   "prisma": {
