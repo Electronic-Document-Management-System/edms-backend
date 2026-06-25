@@ -24,15 +24,15 @@ const login = asyncHandler(async (req: Request, res: Response) => {
     .status(200)
     .cookie('accessToken', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none' as const,
       maxAge: 15 * 60 * 1000,
     })
     .cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 10000,
+      secure: true,
+      sameSite: 'none' as const,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     })
     .json(
       new ApiResponse(
@@ -51,8 +51,8 @@ const login = asyncHandler(async (req: Request, res: Response) => {
 const logout = asyncHandler(async (req: Request, res: Response) => {
   const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax' as const,
+    secure: true,
+    sameSite: 'none' as const,
   };
 
   return res
@@ -82,8 +82,8 @@ const refreshAccessToken = asyncHandler(
       .status(200)
       .cookie("accessToken", accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: true,
+        sameSite: 'none' as const,
         maxAge: 15 * 60 * 1000,
       })
       .json(
