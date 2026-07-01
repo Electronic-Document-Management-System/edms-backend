@@ -121,23 +121,42 @@ export const uploadSingleDocumentService = async (
     throw new ApiError(500, 'Failed to upload document to storage.');
   }
 
-  const document = await prisma.document.create({
-    data: {
-      title: title,
-      description: description,
-      folder_id: folder_id,
-      dept_id: dept_id,
-      uploaded_by: uploaded_by,
+  const document = await prisma.$transaction(async (tx) => {
 
-      originalName: uploadedFile.originalName,
-      fileName: uploadedFile.originalName,
-      mimeType: uploadedFile.mimeType,
-      fileSize: uploadedFile.fileSize,
-      bucketName: uploadedFile.bucketName,
-      objectKey: uploadedFile.objectKey,
-    },
-  });
+    const createdDocument = await prisma.document.create({
+      data: {
+        title,
+        description,
+        folder_id,
+        dept_id,
+        uploaded_by,
+        originalName: uploadedFile.originalName,
+        fileName: uploadedFile.originalName,
+        mimeType: uploadedFile.mimeType,
+        fileSize: uploadedFile.fileSize,
+        bucketName: uploadedFile.bucketName,
+        objectKey: uploadedFile.objectKey,
+      },
+    });
 
+    await tx.documentVersion.create({
+      data: {
+        document_id: createdDocument.id,
+        versionNumber: 1,
+        originalName: uploadedFile.originalName,
+        fileName: uploadedFile.originalName,
+        mimeType: uploadedFile.mimeType,
+        fileSize: uploadedFile.fileSize,
+        bucketName: uploadedFile.bucketName,
+        objectKey: uploadedFile.objectKey,
+        isCurrent: true,
+        uploaded_By: uploaded_by,
+      }
+    });
+
+    return createdDocument;
+
+  })
   return document;
 };
 
@@ -358,7 +377,7 @@ export const restoreDocumentService = async (documentId: number) => {
   return restoredDocument;
 };
 
-export const searchDocumentsService = async () => {};
+export const searchDocumentsService = async () => { };
 
 export const downloadDocumentService = async (documentId: number) => {
   if (!documentId || Number.isNaN(documentId)) {

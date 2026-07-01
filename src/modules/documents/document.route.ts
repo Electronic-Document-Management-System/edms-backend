@@ -413,23 +413,39 @@ router
 
 // Comment routes
 router
-  .route('/:id/comments')
+  .route('/:documentId/comments')
   .get(requireAuth, requirePermission, getDocumentComments)
   .post(requireAuth, requirePermission, addDocumentComment);
 
 // Document versions routes
 router
-  .route('/:id/versions')
-  .get(requireAuth, requirePermission, getDocumentVersions)
-  .post(requireAuth, requirePermission, createDocumentVersion);
+  .route('/:documentId/versions')
+  .get(
+    requireAuth,
+    requirePermission({ resource: RESOURCES.DOCUMENT, action: ACTIONS.READ, scope: SCOPES.OWN }),
+    getDocumentVersions
+  )
+  .post(
+    requireAuth,
+    requirePermission({ resource: RESOURCES.DOCUMENT, action: ACTIONS.UPLOAD, scope: SCOPES.OWN }),
+    uploadSingleDocument,
+    createDocumentVersion
+  );
 
 router
-  .route('/:id/versions/:versionId')
-  .get(requireAuth, requirePermission, getDocumentVersionById)
-  .post(requireAuth, requirePermission, createDocumentVersion);
+  .route('/:documentId/versions/:versionId')
+  .get(
+    requireAuth,
+    requirePermission({ resource: RESOURCES.DOCUMENT, action: ACTIONS.READ, scope: SCOPES.OWN }),
+    getDocumentVersionById
+  );
 
 router
-  .route('/:id/versions/:versionId/restore')
-  .patch(requireAuth, requirePermission, restoreDocumentVersion);
+  .route('/:documentId/versions/:versionId/restore')
+  .patch(
+    requireAuth,
+    requirePermission({ resource: RESOURCES.DOCUMENT, action: ACTIONS.UPDATE, scope: SCOPES.OWN }),
+    restoreDocumentVersion
+  );
 
 export default router;
