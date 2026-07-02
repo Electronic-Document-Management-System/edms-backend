@@ -24,6 +24,8 @@ model User {
   uploadedDocuments Document[]
   uploadedVersions  DocumentVersion[]
 
+  auditLogs AuditLog[]
+
   createdFolders Folder[]
 
   documentsSharedWithMe DocumentShare[] @relation("DocumentSharedWithUser")
@@ -382,4 +384,82 @@ model DocumentVersion {
   @@index([document_id])
   @@index([uploaded_By])
   @@index([isCurrent])
+}
+
+enum AuditAction {
+  
+  DOCUMENT_CREATED
+  DOCUMENT_VIEWED
+  DOCUMENT_UPDATED
+  DOCUMENT_DELETED
+  DOCUMENT_ARCHIVED
+  DOCUMENT_RESTORED
+  DOCUMENT_DOWNLOADED
+  DOCUMENT_SHARED
+  DOCUMENT_SHARE_REMOVED
+  DOCUMENT_VERSION_CREATED
+  DOCUMENT_VERSION_RESTORED
+
+  FOLDER_CREATED
+  FOLDER_UPDATED
+  FOLDER_DELETED
+  FOLDER_MOVED
+
+  DEPARTMENT_CREATED
+  DEPARTMENT_UPDATED
+  DEPARTMENT_DELETED
+
+  WORKFLOW_SUBMITTED
+  WORKFLOW_REVIEWER_ASSIGNED
+  WORKFLOW_APPROVED
+  WORKFLOW_REJECTED
+  WORKFLOW_CANCELLED
+
+  USER_CREATED
+  USER_UPDATED
+  USER_DISABLED
+  USER_ACTIVATED
+  USER_ROLE_ASSIGNED
+  USER_ROLE_REMOVED
+
+  ROLE_CREATED
+  ROLE_UPDATED
+  ROLE_DELETED
+  
+  PERMISSION_CREATED
+  PERMISSION_UPDATED
+  PERMISSION_DELETED
+  PERMISSION_ASSIGNED_TO_ROLE
+  PERMISSION_REMOVED_FROM_ROLE
+
+  USER_LOGIN
+  USER_LOGOUT
+
+  METADATA_FIELD_CREATED
+  METADATA_FIELD_UPDATED
+  METADATA_FIELD_DELETED
+  DOCUMENT_METADATA_ADDED
+  DOCUMENT_METADATA_UPDATED
+  DOCUMENT_METADATA_REMOVED
+}
+
+model AuditLog {
+  id         Int         @id @default(autoincrement())
+  action     AuditAction
+  resource   String      
+  resourceId Int?        
+  userId     Int         
+  metadata   Json?      
+  ipAddress  String?
+  userAgent  String?
+
+  user       User        @relation(fields: [userId], references: [id])
+
+  createdAt  DateTime    @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([resourceId])
+  @@index([createdAt])
 }
