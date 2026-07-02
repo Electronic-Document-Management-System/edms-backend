@@ -1,24 +1,26 @@
 import { Router } from "express";
-import { requirePermission } from "../../middlewares/rbac.middleware";
-import { requireAuth } from "../../middlewares/auth.middleware";
+import { requirePermission } from "@/middlewares/rbac.middleware";
+import { requireAuth } from "@/middlewares/auth.middleware";
+import { getAuditLogById, getAuditLogs } from "./audit.controller";
+import { ACTIONS, RESOURCES, SCOPES } from "@/constants";
 
 const router = Router();
 
 router
     .route("/")
-    .get(requireAuth, requirePermission,)
+    .get(
+        requireAuth,
+        requirePermission({ resource: RESOURCES.AUDITLOG, action: ACTIONS.READ, scope: SCOPES.ALL }),
+        getAuditLogs
+    );
 
 router
-    .route("/:id")
-    .get(requireAuth, requirePermission,)
+    .route("/:logId")
+    .get(
+        requireAuth,
+        requirePermission({ resource: RESOURCES.AUDITLOG, action: ACTIONS.READ, scope: SCOPES.ALL }),
+        getAuditLogById
+    );
 
-
-router
-    .route("/document/:id")
-    .get(requireAuth, requirePermission, )
-
-// GET    /api/audit-logs
-// GET    /api/audit-logs/:id
-// GET    /api/documents/:id/audit-logs
 
 export default router;
