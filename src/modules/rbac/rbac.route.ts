@@ -17,6 +17,8 @@ import {
 } from './rbac.controller';
 import { requirePermission } from '@/middlewares/rbac.middleware';
 import { ACTIONS, RESOURCES, SCOPES } from '@/constants';
+import { auditLog } from '@/middlewares/audit.middleware';
+import { AuditAction } from '@prisma/client';
 
 const router = Router();
 
@@ -30,7 +32,8 @@ router
   .post(
     requireAuth,
     requirePermission({ resource: RESOURCES.ROLE, action: ACTIONS.CREATE, scope: SCOPES.ALL }),
-    createRole,
+    auditLog(AuditAction.ROLE_CREATED, 'role'),
+    createRole
   );
 
 router
@@ -51,12 +54,14 @@ router
   .patch(
     requireAuth,
     requirePermission({ resource: RESOURCES.ROLE, action: ACTIONS.UPDATE, scope: SCOPES.ALL }),
-    updateRole,
+    auditLog(AuditAction.ROLE_UPDATED, 'role'),
+    updateRole
   )
   .delete(
     requireAuth,
     requirePermission({ resource: RESOURCES.ROLE, action: ACTIONS.DELETE, scope: SCOPES.ALL }),
-    deleteRole,
+    auditLog(AuditAction.ROLE_DELETED, 'role'),
+    deleteRole
   );
 
 
@@ -70,7 +75,8 @@ router
   .post(
     requireAuth,
     requirePermission({ resource: RESOURCES.ROLE_PERMISSION, action: ACTIONS.ASSIGN, scope: SCOPES.ALL }),
-    addPermissionToRole,
+    auditLog(AuditAction.PERMISSION_ASSIGNED_TO_ROLE, 'permission'),
+    addPermissionToRole
   );
 
 router
@@ -78,7 +84,8 @@ router
   .delete(
     requireAuth,
     requirePermission({ resource: RESOURCES.ROLE_PERMISSION, action: ACTIONS.REMOVE, scope: SCOPES.ALL }),
-    removePermissionFromRole,
+    auditLog(AuditAction.PERMISSION_REMOVED_FROM_ROLE, 'permission'),
+    removePermissionFromRole
   );
 
 router
@@ -91,7 +98,8 @@ router
   .post(
     requireAuth,
     requirePermission({ resource: RESOURCES.PERMISSION, action: ACTIONS.CREATE, scope: SCOPES.ALL }),
-    createPermission,
+    auditLog(AuditAction.PERMISSION_CREATED, 'permission'),
+    createPermission
   );
 
 router
@@ -99,12 +107,14 @@ router
   .patch(
     requireAuth,
     requirePermission({ resource: RESOURCES.PERMISSION, action: ACTIONS.UPDATE, scope: SCOPES.ALL }),
-    updatePermission,
+    auditLog(AuditAction.PERMISSION_UPDATED, 'permission'),
+    updatePermission
   )
   .delete(
     requireAuth,
     requirePermission({ resource: RESOURCES.PERMISSION, action: ACTIONS.DELETE, scope: SCOPES.ALL }),
-    deletePermission,
+    auditLog(AuditAction.PERMISSION_DELETED, 'permission'),
+    deletePermission
   );
 
 export default router;
