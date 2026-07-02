@@ -4,6 +4,8 @@ import { ApiResponse } from '@/utils/ApiResponse';
 import asyncHandler from '@/utils/asyncHandler';
 
 import * as authService from './auth.service';
+import { createAuditLogService } from '../audit/audit.service';
+import { AuditAction } from '@prisma/client';
 
 /**
  * @description Authenticates a user using email and password, then returns access and refresh tokens.
@@ -19,6 +21,16 @@ const login = asyncHandler(async (req: Request, res: Response) => {
     httpOnly: true,
     secure: true,
   };
+
+  // Audit Log login attempt 
+  createAuditLogService({
+    action: AuditAction.USER_LOGIN,
+    userId: user.id,
+    resource: 'user',
+    resourceId: user.id,
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent']
+  })
 
   return res
     .status(200)

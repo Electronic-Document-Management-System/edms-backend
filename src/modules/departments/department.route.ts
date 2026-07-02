@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { requirePermission } from '../../middlewares/rbac.middleware';
-import { requireAuth } from '../../middlewares/auth.middleware';
+import { requirePermission } from '@/middlewares/rbac.middleware';
+import { requireAuth } from '@/middlewares/auth.middleware';
 import {
   createNewDepartment,
   deleteDepartment,
@@ -8,7 +8,9 @@ import {
   getDepartmentById,
   updateDepartment,
 } from './department.controller';
-import { ACTIONS, RESOURCES, SCOPES } from '../../constants';
+import { ACTIONS, RESOURCES, SCOPES } from '@/constants';
+import { auditLog } from '@/middlewares/audit.middleware';
+import { AuditAction } from '@prisma/client';
 
 const router = Router();
 
@@ -36,7 +38,8 @@ router
       action: ACTIONS.CREATE,
       scope: SCOPES.ALL,
     }),
-    createNewDepartment,
+    auditLog(AuditAction.DEPARTMENT_CREATED, 'department'),
+    createNewDepartment
   );
 
 router
@@ -57,7 +60,8 @@ router
       action: ACTIONS.UPDATE,
       scope: SCOPES.ALL,
     }),
-    updateDepartment,
+    auditLog(AuditAction.DEPARTMENT_UPDATED, 'department'),
+    updateDepartment
   )
   .delete(
     requireAuth,
@@ -66,7 +70,8 @@ router
       action: ACTIONS.DELETE,
       scope: SCOPES.ALL,
     }),
-    deleteDepartment,
+    auditLog(AuditAction.DEPARTMENT_DELETED, 'department'),
+    deleteDepartment
   );
 
 export default router;

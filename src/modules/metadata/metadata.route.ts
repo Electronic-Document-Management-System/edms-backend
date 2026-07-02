@@ -3,6 +3,8 @@ import { requireAuth } from "@/middlewares/auth.middleware";
 import { requirePermission } from "@/middlewares/rbac.middleware";
 import { createMetadataField, deleteMetadataField, getAllMetadataFields, getMetadataFieldById, updateMetadataField } from "./metadata.controller";
 import { ACTIONS, RESOURCES, SCOPES } from "@/constants";
+import { auditLog } from "@/middlewares/audit.middleware";
+import { AuditAction } from "@prisma/client";
 
 const router = Router()
 
@@ -24,20 +26,25 @@ DELETE /api/documents/:documentId/metadata/:metadataId
 // Metadata fields routes
 router
     .route("/fields")
-    .get(requireAuth,
+    .get(
+        requireAuth,
         requirePermission({
             resource: RESOURCES.METADATA_FIELD,
             action: ACTIONS.READ,
             scope: SCOPES.ALL
         }),
-        getAllMetadataFields)
-    .post(requireAuth,
+        getAllMetadataFields
+    )
+    .post(
+        requireAuth,
         requirePermission({
             resource: RESOURCES.METADATA_FIELD,
             action: ACTIONS.CREATE,
             scope: SCOPES.ALL
         }),
-        createMetadataField)
+        auditLog(AuditAction.METADATA_FIELD_CREATED, 'metadata'),
+        createMetadataField
+    )
 
 router
     .route("/fields/:id")
@@ -48,19 +55,25 @@ router
             scope: SCOPES.ALL
         }),
         getMetadataFieldById)
-    .patch(requireAuth,
+    .patch(
+        requireAuth,
         requirePermission({
             resource: RESOURCES.METADATA_FIELD,
             action: ACTIONS.UPDATE,
             scope: SCOPES.ALL
         }),
-        updateMetadataField)
-    .delete(requireAuth,
+        auditLog(AuditAction.METADATA_FIELD_UPDATED, 'metadata'),
+        updateMetadataField
+    )
+    .delete(
+        requireAuth,
         requirePermission({
             resource: RESOURCES.METADATA_FIELD,
             action: ACTIONS.DELETE,
             scope: SCOPES.ALL
         }),
-        deleteMetadataField)
+        auditLog(AuditAction.METADATA_FIELD_DELETED, 'metadata'),
+        deleteMetadataField
+    )
 
 export default router;

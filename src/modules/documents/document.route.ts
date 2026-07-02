@@ -54,6 +54,8 @@ import {
   uploadSingleDocument,
 } from '@/middlewares/upload.middleware';
 import { ACTIONS, RESOURCES, SCOPES } from '@/constants';
+import { auditLog } from '@/middlewares/audit.middleware';
+import { AuditAction } from '@prisma/client';
 
 const router = Router();
 
@@ -98,6 +100,7 @@ router
         scope: SCOPES.ALL,
       },
     ]),
+    auditLog(AuditAction.DOCUMENT_SHARED, 'share'),
     getDocumentsSharedWithMe,
   );
 
@@ -112,7 +115,7 @@ router
       action: ACTIONS.READ,
       scope: SCOPES.ALL,
     }),
-    getAllDocuments,
+    getAllDocuments
   )
   .post(
     requireAuth,
@@ -122,7 +125,8 @@ router
       scope: SCOPES.OWN,
     }),
     uploadSingleDocument,
-    uploadDocument,
+    auditLog(AuditAction.DOCUMENT_CREATED, 'document'),
+    uploadDocument
   );
 
 router.route('/bulk-upload').post(
@@ -149,7 +153,8 @@ router
       action: ACTIONS.READ,
       scope: SCOPES.ALL,
     }]),
-    getDocumentById,
+    auditLog(AuditAction.DOCUMENT_VIEWED, 'document'),
+    getDocumentById
   )
   .patch(
     requireAuth,
@@ -158,7 +163,8 @@ router
       action: ACTIONS.UPDATE,
       scope: SCOPES.OWN,
     }),
-    updateDocument,
+    auditLog(AuditAction.DOCUMENT_UPDATED, 'document'),
+    updateDocument
   )
   .delete(
     requireAuth,
@@ -167,7 +173,8 @@ router
       action: ACTIONS.DELETE,
       scope: SCOPES.OWN,
     }),
-    removeDocument,
+    auditLog(AuditAction.DOCUMENT_DELETED, 'document'),
+    removeDocument
   );
 
 router.route('/:id/download').get(
@@ -177,7 +184,8 @@ router.route('/:id/download').get(
     action: ACTIONS.DOWNLOAD,
     scope: SCOPES.ALL,
   }),
-  downloadDocument,
+  auditLog(AuditAction.DOCUMENT_DOWNLOADED, 'document'),
+  downloadDocument
 );
 
 router.route('/:id/archive').patch(
@@ -199,7 +207,8 @@ router.route('/:id/archive').patch(
       scope: SCOPES.ALL,
     },
   ]),
-  archiveDocument,
+  auditLog(AuditAction.DOCUMENT_ARCHIVED, 'document'),
+  archiveDocument
 );
 
 router.route('/:id/restore').patch(
@@ -221,7 +230,8 @@ router.route('/:id/restore').patch(
       scope: SCOPES.ALL,
     },
   ]),
-  restoreDocument,
+  auditLog(AuditAction.DOCUMENT_RESTORED, 'document'),
+  restoreDocument
 );
 
 router.route('/search').get(requireAuth, requirePermission, searchDocuments);
@@ -237,6 +247,7 @@ router
       action: ACTIONS.SUBMIT,
       scope: SCOPES.ALL
     }),
+    auditLog(AuditAction.WORKFLOW_SUBMITTED, 'workflow'),
     submitDocumentWorkflow
   );
 
@@ -249,6 +260,7 @@ router
       action: ACTIONS.APPROVE,
       scope: SCOPES.ASSIGNED
     }),
+    auditLog(AuditAction.WORKFLOW_APPROVED, 'workflow'),
     approveDocumentWorkflow
   );
 
@@ -261,6 +273,7 @@ router
       action: ACTIONS.REJECT,
       scope: SCOPES.ASSIGNED
     }),
+    auditLog(AuditAction.WORKFLOW_REJECTED, 'workflow'),
     rejectDocumentWorkflow
   );
 
@@ -273,6 +286,7 @@ router
       action: ACTIONS.ASSIGN,
       scope: SCOPES.ALL
     }),
+    auditLog(AuditAction.WORKFLOW_REVIEWER_ASSIGNED, 'workflow'),
     assignReviewer
   );
 
@@ -285,6 +299,7 @@ router
       action: ACTIONS.CANCEL,
       scope: SCOPES.ALL
     }),
+    auditLog(AuditAction.WORKFLOW_CANCELLED, 'workflow'),
     cancelDocumentWorkflow
   );
 
@@ -318,7 +333,9 @@ router
       action: ACTIONS.CREATE,
       scope: SCOPES.ALL
     }),
-    addDocumentMetadata)
+    auditLog(AuditAction.DOCUMENT_METADATA_ADDED, 'metadata'),
+    addDocumentMetadata
+  )
 
 router
   .route('/:documentId/metadata/:metadataFieldId')
@@ -329,7 +346,9 @@ router
       action: ACTIONS.UPDATE,
       scope: SCOPES.ALL,
     }),
-    updateDocumentMetadata)
+    auditLog(AuditAction.DOCUMENT_METADATA_UPDATED, 'metadata'),
+    updateDocumentMetadata
+  )
   .delete(
     requireAuth,
     requirePermission({
@@ -337,7 +356,8 @@ router
       action: ACTIONS.DELETE,
       scope: SCOPES.ALL,
     }),
-    removeDocumentMetadata,
+    auditLog(AuditAction.DOCUMENT_METADATA_UPDATED, 'metadata'),
+    removeDocumentMetadata
   );
 
 // Document sharing routes
@@ -384,7 +404,8 @@ router
         scope: SCOPES.ALL,
       },
     ]),
-    shareDocument,
+    auditLog(AuditAction.DOCUMENT_SHARED, 'share'),
+    shareDocument
   );
 
 router
@@ -408,7 +429,8 @@ router
         scope: SCOPES.ALL,
       },
     ]),
-    removeShare,
+    auditLog(AuditAction.DOCUMENT_SHARE_REMOVED, 'share'),
+    removeShare
   );
 
 // Comment routes
@@ -429,6 +451,7 @@ router
     requireAuth,
     requirePermission({ resource: RESOURCES.DOCUMENT, action: ACTIONS.UPLOAD, scope: SCOPES.OWN }),
     uploadSingleDocument,
+    auditLog(AuditAction.DOCUMENT_VERSION_CREATED, 'version'),
     createDocumentVersion
   );
 
@@ -439,12 +462,13 @@ router
     requirePermission({ resource: RESOURCES.DOCUMENT, action: ACTIONS.READ, scope: SCOPES.OWN }),
     getDocumentVersionById
   );
-
+  
 router
   .route('/:documentId/versions/:versionId/restore')
   .patch(
     requireAuth,
     requirePermission({ resource: RESOURCES.DOCUMENT, action: ACTIONS.UPDATE, scope: SCOPES.OWN }),
+    auditLog(AuditAction.DOCUMENT_VERSION_RESTORED, 'version'),
     restoreDocumentVersion
   );
 
