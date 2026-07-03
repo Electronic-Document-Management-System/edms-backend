@@ -1,7 +1,7 @@
 
 import { Request, Response } from "express";
-import asyncHandler from "../../utils/asyncHandler";
-import { ApiResponse } from "../../utils/ApiResponse";
+import asyncHandler from "@/utils/asyncHandler";
+import { ApiResponse } from "@/utils/ApiResponse";
 import { activateUserService, assignRoleToUserService, createNewUserService, disableUserService, getAllUsersService, getUserByIdService, removeRoleFromUserService, updateUserByIdService } from "./users.service";
 
 /**
@@ -19,7 +19,7 @@ export const createNewUser = asyncHandler(async (req: Request, res: Response) =>
     .json(
       new ApiResponse(
         200,
-        newUser,
+        { newUser },
         "User created successfully"
       )
     );
@@ -32,14 +32,15 @@ export const createNewUser = asyncHandler(async (req: Request, res: Response) =>
  */
 export const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
 
-  const users = await getAllUsersService();
+  const permission = req.query.permission as string | undefined;
+  const users = await getAllUsersService({ permission });
 
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
-        users,
+        { users },
         "Users retrieved successfully"
       )
     );
@@ -60,7 +61,7 @@ export const getUserById = asyncHandler(async (req: Request, res: Response) => {
     .json(
       new ApiResponse(
         200,
-        user,
+        { user },
         "User retrieved successfully"
       )
     );
@@ -82,7 +83,7 @@ export const updateUserById = asyncHandler(async (req: Request, res: Response) =
     .json(
       new ApiResponse(
         200,
-        updatedUser,
+        { updatedUser },
         "User updated successfully"
       )
     );
@@ -124,7 +125,7 @@ export const activateUser = asyncHandler(async (req: Request, res: Response) => 
     .json(
       new ApiResponse(
         200,
-        activatedUser,
+        { activatedUser },
         "User activated successfully"
       )
     );
@@ -146,7 +147,7 @@ export const assignRoleToUser = asyncHandler(async (req: Request, res: Response)
     .json(
       new ApiResponse(
         200,
-        assignedRole,
+        { assignedRole },
         "Role assigned to user successfully"
       )
     );
@@ -168,7 +169,7 @@ export const removeRoleFromUser = asyncHandler(async (req: Request, res: Respons
     .json(
       new ApiResponse(
         200,
-        removedRole,
+        { removedRole },
         "Role removed from user successfully"
       )
     );
