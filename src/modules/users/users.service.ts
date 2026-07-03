@@ -1,17 +1,49 @@
-import { prisma } from "../../config/db.config"
-import { newUserDataType, safeUserSelect, updateUserDataType } from "../../types/users";
-import ApiError from "../../utils/ApiError"
-import { hashPassword } from "../auth/auth.utils";
+import { prisma } from "@/config/db.config"
+import { newUserDataType, safeUserSelect, updateUserDataType } from "@/types/users";
+import ApiError from "@/utils/ApiError"
+import { hashPassword } from "@/modules/auth/auth.utils";
 
-export const getAllUsersService = async () => {
+export const getAllUsersService = async ({ permission }: { permission?: string } = {}) => {
+
+    const [resource, action, scope] = permission?.split(":") || ["", "", ""];
+
+    const permissionExists = await prisma.permission.findUnique({
+        where: {
+            resource_action_scope: { resource, action, scope }
+        }
+    });
+
+    console.log(permission);
+
+    if (!permissionExists) {
+        throw new ApiError(404, `Permission '${permission}' does not exist in the system`);
+    };
+
+    let permissionFilter = {};
+
+    if (permission) {
+        permissionFilter = {
+            roles: {
+                some: {
+                    role: {
+                        rolePermissions: {
+                            some: {
+                                permission: { resource, action, scope }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     const users = await prisma.user.findMany(
         {
+            where: permissionFilter,
             select: safeUserSelect,
             orderBy: {
                 createdAt: "desc"
             }
-
         }
     );
     if (!users) {
