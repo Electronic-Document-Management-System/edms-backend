@@ -1,5 +1,6 @@
 import { prisma } from '@/config/db.config';
 import {
+  generatePresignedUrl,
   getFileFromMinIO,
   uploadFileToMinIO,
 } from '@/services/storage/minio.service';
@@ -461,3 +462,24 @@ export const archiveDocumentService = async (
 
   return archivedDocument;
 };
+
+export const getPreviewUrlService = async (documentId: number) => {
+  const document = await prisma.document.findUnique({
+    where: { id: documentId },
+    select: {
+      id: true, objectKey: true, mimeType: true, isDeleted: true
+    }
+  })
+
+  if (!document) {
+    throw new ApiError(404, 'Document not found.');
+  }
+
+  if (document.isDeleted) {
+    throw new ApiError(400, 'Deleted document cannot be previewed.');
+  }
+
+  const previewUrl = await generatePresignedUrl(document?.objectKey || '');
+
+  return {previewUrl, mimeType : document?.mimeType || ''};
+}

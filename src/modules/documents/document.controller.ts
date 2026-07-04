@@ -6,6 +6,7 @@ import {
     downloadDocumentService,
     getAllDocumentsService,
     getDocumentByIdService,
+    getPreviewUrlService,
     removeDocumentService,
     restoreDocumentService,
     searchDocumentsService,
@@ -14,6 +15,7 @@ import {
     uploadSingleDocumentService
 } from "./document.service";
 import ApiError from "@/utils/ApiError";
+import { generatePresignedUrl } from "@/services/storage/minio.service";
 
 /**
  * @description Retrieves all documents from PostgreSQL.
@@ -282,6 +284,31 @@ export const downloadDocument = asyncHandler(
     fileStream.pipe(res);
   },
 );
+
+/**
+ * @description Get Preview of a document
+ * @route GET /api/documents/:documentId/preview
+ * @access Private
+ */
+export const getPreviewUrl = asyncHandler(async (req:Request, res: Response) => {
+    const documentId = Number(req.params.documentId);
+
+    if (isNaN(documentId)) {
+        throw new ApiError(400, 'Invalid document ID.');
+    }
+    
+    const { previewUrl, mimeType } = await getPreviewUrlService(documentId);
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                { previewUrl, mimeType },
+                'Preview URL generated successfully'
+            )
+        );
+});
 
 /**
  * @description Restores a document in PostgreSQL.

@@ -7,6 +7,7 @@ import {
   CreateBucketCommand,
 } from '@aws-sdk/client-s3';
 import { s3Client, BUCKET_NAME } from '@/config/minio.config';
+import {getSignedUrl} from '@aws-sdk/s3-request-presigner'
 
 export const ensureBucketExists = async () => {
   try {
@@ -59,3 +60,12 @@ export const deleteFileFromMinIO = async (objectKey: string) => {
     new DeleteObjectCommand({ Bucket: BUCKET_NAME, Key: objectKey }),
   );
 };
+
+export const generatePresignedUrl = async (objectKey: string, expiresIn= 3600) => {
+
+  const command = new GetObjectCommand({
+    Bucket: process.env.S3_BUCKET_NAME, 
+    Key: objectKey
+  });
+  return getSignedUrl(s3Client, command, { expiresIn })
+}

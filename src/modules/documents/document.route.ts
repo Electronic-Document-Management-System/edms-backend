@@ -5,6 +5,7 @@ import {
   downloadDocument,
   getAllDocuments,
   getDocumentById,
+  getPreviewUrl,
   removeDocument,
   restoreDocument,
   searchDocuments,
@@ -187,6 +188,13 @@ router.route('/:id/download').get(
   auditLog(AuditAction.DOCUMENT_DOWNLOADED, 'document'),
   downloadDocument
 );
+
+router
+  .route('/:documentId/preview-url')
+  .get(
+    requireAuth,
+    getPreviewUrl
+  );
 
 router.route('/:id/archive').patch(
   requireAuth,
@@ -462,7 +470,7 @@ router
     requirePermission({ resource: RESOURCES.DOCUMENT, action: ACTIONS.READ, scope: SCOPES.OWN }),
     getDocumentVersionById
   );
-  
+
 router
   .route('/:documentId/versions/:versionId/restore')
   .patch(
