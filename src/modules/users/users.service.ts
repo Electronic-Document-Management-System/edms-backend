@@ -4,53 +4,47 @@ import ApiError from "@/utils/ApiError"
 import { hashPassword } from "@/modules/auth/auth.utils";
 
 export const getAllUsersService = async ({ permission }: { permission?: string } = {}) => {
+  let permissionFilter = {};
 
-    const [resource, action, scope] = permission?.split(":") || ["", "", ""];
+  if (permission) {
+
+    const parts = permission.split(":");
+    if (parts.length !== 3 || parts.some(p => !p.trim())) {
+      throw new ApiError(400, 'Invalid permission format. Expected: resource:action:scope');
+    }
+
+    const [resource, action, scope] = parts;
 
     const permissionExists = await prisma.permission.findUnique({
-        where: {
-            resource_action_scope: { resource, action, scope }
-        }
+      where: { resource_action_scope: { resource, action, scope } }
     });
 
-    console.log(permission);
-
     if (!permissionExists) {
-        throw new ApiError(404, `Permission '${permission}' does not exist in the system`);
+      throw new ApiError(404, `Permission '${permission}' does not exist in the system`);
+    }
+
+    permissionFilter = {
+      roles: {
+        some: {
+          role: {
+            rolePermissions: {
+              some: {
+                permission: { resource, action, scope }
+              }
+            }
+          }
+        }
+      }
     };
+  }
 
-    let permissionFilter = {};
+  const users = await prisma.user.findMany({
+    where: { isActive: true, ...permissionFilter },
+    select: safeUserSelect,
+    orderBy: { createdAt: 'desc' }
+  });
 
-    if (permission) {
-        permissionFilter = {
-            roles: {
-                some: {
-                    role: {
-                        rolePermissions: {
-                            some: {
-                                permission: { resource, action, scope }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    const users = await prisma.user.findMany(
-        {
-            where: permissionFilter,
-            select: safeUserSelect,
-            orderBy: {
-                createdAt: "desc"
-            }
-        }
-    );
-    if (!users) {
-        throw new ApiError(404, "No users found");
-    }
-    return users;
-
+  return users;
 };
 
 export const getUserByIdService = async (userId: number) => {

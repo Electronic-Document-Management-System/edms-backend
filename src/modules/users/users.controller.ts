@@ -33,7 +33,9 @@ export const createNewUser = asyncHandler(async (req: Request, res: Response) =>
 export const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
 
   const permission = req.query.permission as string | undefined;
-  const users = await getAllUsersService({ permission });
+  const sanitizedPermission = permission?.trim() || undefined;
+
+  const users = await getAllUsersService({ permission: sanitizedPermission });
 
   return res
     .status(200)
