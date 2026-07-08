@@ -42,7 +42,9 @@ import {
 } from '@/modules/sharing/sharing.controller';
 import {
   addDocumentComment,
+  deleteComment,
   getDocumentComments,
+  updateComment,
 } from '@/modules/comment/comment.controller';
 import {
   createDocumentVersion,
@@ -444,8 +446,46 @@ router
 // Comment routes
 router
   .route('/:documentId/comments')
-  .get(requireAuth, requirePermission, getDocumentComments)
-  .post(requireAuth, requirePermission, addDocumentComment);
+  .get(
+    requireAuth,
+    requirePermission({
+      resource: RESOURCES.COMMENT,
+      action: ACTIONS.READ,
+      scope: SCOPES.ALL,
+    }),
+    getDocumentComments
+  )
+  .post(
+    requireAuth,
+    requirePermission({
+      resource: RESOURCES.COMMENT,
+      action: ACTIONS.CREATE,
+      scope: SCOPES.OWN,
+    }),
+    auditLog(AuditAction.COMMENT_ADDED, "comment"),
+    addDocumentComment
+  );
+
+router
+  .route("/:documentId/comments/:commentId")
+  .patch(requireAuth,
+    requirePermission({
+      resource: RESOURCES.COMMENT,
+      action: ACTIONS.UPDATE,
+      scope: SCOPES.OWN
+    }),
+    auditLog(AuditAction.COMMENT_UPDATED, "comment"),
+    updateComment
+  )
+  .delete(requireAuth,
+    requirePermission({
+      resource: RESOURCES.COMMENT,
+      action: ACTIONS.DELETE,
+      scope: SCOPES.OWN
+    }),
+    auditLog(AuditAction.COMMENT_DELETED, "comment"),
+    deleteComment
+  );
 
 // Document versions routes
 router
