@@ -28,6 +28,8 @@ model User {
 
   createdFolders Folder[]
 
+  comments Comment[]
+
   documentsSharedWithMe DocumentShare[] @relation("DocumentSharedWithUser")
   documentsSharedByMe   DocumentShare[] @relation("DocumentSharedByUser")
 
@@ -169,6 +171,8 @@ model Document {
 
   workflow        DocumentWorkflow?
   workflowHistory WorkflowHistory[]
+
+  comments Comment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -441,6 +445,10 @@ enum AuditAction {
   DOCUMENT_METADATA_ADDED
   DOCUMENT_METADATA_UPDATED
   DOCUMENT_METADATA_REMOVED
+
+  COMMENT_ADDED
+  COMMENT_UPDATED
+  COMMENT_DELETED
 }
 
 model AuditLog {
@@ -462,4 +470,28 @@ model AuditLog {
   @@index([resource])
   @@index([resourceId])
   @@index([createdAt])
+}
+
+model Comment {
+  id Int @id @default(autoincrement())
+
+  document_id Int
+  userId      Int
+
+  content String
+
+  isEdited  Boolean   @default(false)
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+  deletedBy Int?
+
+  document Document @relation(fields: [document_id], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([document_id])
+  @@index([userId])
+  @@index([isDeleted])
 }
