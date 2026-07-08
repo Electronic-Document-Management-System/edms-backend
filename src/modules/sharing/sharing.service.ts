@@ -1,7 +1,8 @@
 import { prisma } from "@/config/db.config";
 import { ShareDocumentInput } from "@/types/sharing";
 import ApiError from "@/utils/ApiError";
-import { SharePermission } from "@prisma/client";
+import { NotificationType, SharePermission } from "@prisma/client";
+import { createNotificationService } from "../notification/notification.service";
 
 const validateId = (id: number, message: string) => {
   if (!id || Number.isNaN(id)) {
@@ -168,6 +169,15 @@ export const shareDocumentService = async (
       },
     },
   });
+
+  await createNotificationService({
+    userId: documentShare.sharedWithUserId,
+    type: NotificationType.DOCUMENT_SHARED,
+    title: "Document Shared",
+    message: `${documentShare.sharedByUser.name} shared ${documentShare.document.title} with you`,
+    resource: "document",
+    resourceId: documentShare.document_id,
+  })
 
   return documentShare;
 };
