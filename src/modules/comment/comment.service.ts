@@ -1,5 +1,7 @@
 import { prisma } from '@/config/db.config';
 import ApiError from '@/utils/ApiError';
+import { createNotificationService } from '../notification/notification.service';
+import { NotificationType } from '@prisma/client';
 
 export const addDocumentCommentService = async ({
     documentId,
@@ -24,6 +26,15 @@ export const addDocumentCommentService = async ({
         include: {
             user: { select: { id: true, name: true, email: true } },
         },
+    });
+
+    await createNotificationService({
+        userId: document.uploaded_by,
+        type: NotificationType.COMMENT_ADDED,
+        title: "You've received a new comment",
+        message: `${comment.user.name} commented on ${document.title}`,
+        resource: "document",
+        resourceId: documentId,
     });
 
     return comment;

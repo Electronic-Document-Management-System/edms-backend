@@ -1,7 +1,8 @@
-import { WorkflowAction, WorkflowStatus } from '@prisma/client';
+import { NotificationType, WorkflowAction, WorkflowStatus } from '@prisma/client';
 import { prisma } from '@/config/db.config';
 import ApiError from '@/utils/ApiError';
 import { WorkflowHistoryData } from '@/types/workflow';
+import { createNotificationService } from '../notification/notification.service';
 
 const validateId = (id: number, message: string) => {
     if (!id || Number.isNaN(id)) {
@@ -171,10 +172,11 @@ export const assignReviewerService = async (
         where: { document_id: documentId },
         data: {
             status: WorkflowStatus.IN_REVIEW,
-            reviewerId: reviewer.id,
-            assignedById: assignedById,
+            reviewerId,
+            assignedById,
             assignedAt: new Date(),
         },
+        include: { document: true }
     });
 
     await createWorkflowHistory({
@@ -189,6 +191,15 @@ export const assignReviewerService = async (
             action === WorkflowAction.REVIEWER_REASSIGNED
                 ? 'Reviewer reassigned.'
                 : 'Reviewer assigned.',
+    });
+
+    await createNotificationService({
+        userId: workflow.reviewerId!,
+        type: NotificationType.REVIEWER_ASSIGNED,
+        title: `New document assigned for review`,
+        message: `You have been assigned for review ${updatedWorkflow.document.title}.`,
+        resource: 'document',
+        resourceId: workflow.document_id,
     });
 
     return updatedWorkflow;
@@ -226,8 +237,8 @@ export const approveDocumentWorkflowService = async (
             reviewComment: comment,
             completedAt: new Date(),
             reviewerId: reviewerId,
-
         },
+        include: { document: true }
     });
 
     await createWorkflowHistory({
@@ -239,6 +250,15 @@ export const approveDocumentWorkflowService = async (
         performedById: reviewerId,
         reviewerId: reviewerId,
         comment,
+    });
+
+    await createNotificationService({
+        userId: workflow.submittedById,
+        type: NotificationType.WORKFLOW_APPROVED,
+        title: `Document Approved`,
+        message: `Your ${updatedWorkflow.document.title} document have been approved.`,
+        resource: `document`,
+        resourceId: workflow.document_id,
     });
 
     return updatedWorkflow;
@@ -276,6 +296,7 @@ export const rejectDocumentWorkflowService = async (
             reviewComment: comment,
             completedAt: new Date(),
         },
+        include: { document: true, reviewer: true }
     });
 
     await createWorkflowHistory({
@@ -287,6 +308,15 @@ export const rejectDocumentWorkflowService = async (
         performedById: reviewerId,
         reviewerId,
         comment,
+    });
+
+    await createNotificationService({
+        userId: updatedWorkflow.submittedById,
+        type: NotificationType.WORKFLOW_REJECTED,
+        title: `Your document has been rejected.`,
+        message: `Your ${updatedWorkflow.document.title} document has been rejected by ${updatedWorkflow.reviewer?.name}`,
+        resource: "document",
+        resourceId: workflow.document_id,
     });
 
     return updatedWorkflow;
@@ -325,6 +355,7 @@ export const cancelDocumentWorkflowService = async (
             cancelReason: reason,
             completedAt: new Date(),
         },
+        include: { document: true }
     });
 
     await createWorkflowHistory({
@@ -337,6 +368,17 @@ export const cancelDocumentWorkflowService = async (
         reviewerId: cancelledById,
         comment: reason,
     });
+
+    if (workflow.reviewerId) {
+        await createNotificationService({
+            userId: workflow.reviewerId!,
+            type: NotificationType.WORKFLOW_CANCELLED,
+            title: `Workflow Cancelled.`,
+            message: `The review for "${updatedWorkflow.document.title}" has been cancelled.`,
+            resource: "document",
+            resourceId: workflow.document_id,
+        });
+    }
 
     return updatedWorkflow;
 };
