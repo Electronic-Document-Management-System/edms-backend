@@ -1,10 +1,17 @@
 import { Router } from "express";
-import { deleteNotifications, getMyAllNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotificationById, getNotificationById } from "./notification.controller";
+import { deleteNotifications, getMyAllNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotificationById, getNotificationById, streamNotifications } from "./notification.controller";
 import { requireAuth } from "@/middlewares/auth.middleware";
 import { requirePermission } from "@/middlewares/rbac.middleware";
 import { ACTIONS, RESOURCES, SCOPES } from "@/constants";
 
 const router = Router();
+
+router
+    .route("/stream")
+    .get(
+        requireAuth,
+        streamNotifications
+    );
 
 router
     .route("/")
